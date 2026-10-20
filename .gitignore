@@ -1,0 +1,11 @@
+# 원본 백업 파일은 GitHub에 올리지 않아요
+*_backup_*
+
+# 비밀 정보가 담길 수 있는 파일
+.env
+.env.*
+
+# 배포 도구 / 운영체제가 만드는 파일
+.vercel
+.DS_Store
+Thumbs.db

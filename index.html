@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>톡톡(Talk) 바이브 명함소</title>
+    <!-- Tailwind CSS (디자인 도구) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas: 화면 속 명함을 사진(PNG)으로 바꿔주는 도구 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- qrcode.js: 브라우저 안에서 QR코드를 직접 그려주는 도구 (주소를 다른 QR 서버로 보내지 않아요) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- 구글 한글 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Do+Hyeon&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        /* 입력칸은 글자를 선택·복사할 수 있어야 해요 */
+        input, textarea { user-select: text; }
+
+        .font-jua { font-family: 'Jua', sans-serif; }
+        .font-dohyeon { font-family: 'Do Hyeon', sans-serif; }
+        .font-black-han { font-family: 'Black Han Sans', sans-serif; }
+
+        /* ===== 결과물 규격(비율) 프레임 ===== */
+        /* 1) 표준 명함: 가로형 1.8 : 1 */
+        .frame-card,
+        .business-card-frame { /* 예전 카드와의 호환용 이름 */
+            aspect-ratio: 1.8 / 1;
+            width: 100%;
+            max-width: 420px;
+        }
+        /* 2) 카카오톡 프로필 / 인스타 피드: 정사각형 1 : 1 */
+        .frame-square {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 340px;
+        }
+        /* 3) 인스타 스토리 / 배경화면: 세로형 9 : 16 */
+        .frame-story {
+            aspect-ratio: 9 / 16;
+            width: 100%;
+            max-width: 260px;
+        }
+
+        /* 모달이 뿅! 하고 나타나는 효과 */
+        @keyframes pop-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-pop { animation: pop-in 0.2s ease-out; }
+
+        /* 토스트 알림이 위에서 내려오는 효과 */
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .toast-in { animation: toast-in 0.25s ease-out; }
+
+        /* 바이브 코딩 단계 박스가 부드럽게 밝아지고 어두워지게 */
+        .vibe-step { transition: opacity 0.3s, box-shadow 0.3s, background-color 0.3s; }
+
+        /* 말풍선 꼬리 */
+        .speech-bubble { position: relative; }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            bottom: -8px;
+            border-width: 8px 8px 0 8px;
+            border-style: solid;
+            border-color: #fef3c7 transparent transparent transparent;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- 토스트 알림이 나타나는 자리 (화면 위쪽 가운데) -->
+    <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 w-[92%] max-w-xl pointer-events-none"></div>
+
+    <!-- ===================== 상단 네비게이션바 ===================== -->
+    <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shadow-sm shrink-0">
+        <div class="flex items-center space-x-3 min-w-0">
+            <div class="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-amber-500 text-white flex items-center justify-center text-xl shadow-md">
+                <i class="fa-solid fa-comments"></i>
+            </div>
+            <div class="min-w-0">
+                <h1 class="text-xl sm:text-2xl font-bold font-jua text-slate-900">톡톡(Talk) 바이브 명함소</h1>
+                <p class="text-xs sm:text-sm text-slate-500">텍스트 입력부터 AI 바이브 코딩까지! 나만의 디지털 명함과 프로필을 만들어보세요.</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <!-- 일반 모드 버튼 -->
+            <button onclick="openCreateModal()" class="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center gap-3 shadow-lg transition active:scale-95 text-left">
+                <i class="fa-solid fa-plus text-xl"></i>
+                <span class="flex flex-col leading-tight">
+                    <span class="font-bold text-sm sm:text-base">일반 모드로 만들기</span>
+                    <span class="text-[11px] text-indigo-100">텍스트·스티커로 쉽게 만들기</span>
+                </span>
+            </button>
+            <!-- 바이브 코딩 모드 버튼 -->
+            <button onclick="openCodingStudioModal()" class="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-2xl flex items-center gap-3 shadow-lg transition active:scale-95 text-left">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                <span class="flex flex-col leading-tight">
+                    <span class="font-bold text-sm sm:text-base">✨ 바이브 코딩으로 만들기</span>
+                    <span class="text-[11px] text-amber-950/80">프롬프트 조립 &amp; AI 코드로 만들기</span>
+                </span>
+            </button>
+            <!-- 선생님용 부스 설정 버튼 (QR 업로드 키 입력) -->
+            <button onclick="openSettingsModal()" class="w-11 h-11 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center transition active:scale-95" title="부스 설정 (선생님용)">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===================== 메인 갤러리 화면 ===================== -->
+    <main class="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-100">
+        <div id="cardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start"></div>
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center h-full text-center py-20">
+            <div class="w-20 h-20 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center text-3xl mb-4">
+                <i class="fa-solid fa-address-card"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-700 mb-1">아직 만들어진 명함이 없어요!</h3>
+            <p class="text-sm text-slate-500 mb-6">위쪽의 [일반 모드로 만들기] 또는 [바이브 코딩으로 만들기] 버튼을 눌러 첫 작품을 만들어보세요.</p>
+        </div>
+    </main>
+
+    <!-- ===================== 1. 일반 모드: 기본 정보 입력 모달 ===================== -->
+    <div id="createModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden modal-pop">
+            <div class="px-6 py-4 bg-indigo-600 text-white flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-bold font-jua"><i class="fa-solid fa-plus mr-2"></i>일반 모드로 만들기</h3>
+                <button onclick="closeCreateModal()" class="text-white/80 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-5 overflow-y-auto">
+                <!-- 예시 템플릿 5종 -->
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+                    <p class="text-sm font-bold text-indigo-900 mb-1"><i class="fa-solid fa-wand-magic mr-1.5"></i>예시 템플릿 5종 불러오기</p>
+                    <p class="text-xs text-indigo-700 mb-3">마음에 드는 예시를 누르면 자동으로 채워져요. 그다음 내 정보로 살짝 바꿔 보세요!</p>
+                    <div id="normalTemplateList" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- 결과물 규격(비율) -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">결과물 규격(비율) 선택</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center justify-center gap-1 text-center">
+                            <input type="radio" name="ratioChoice" value="card" checked class="hidden">
+                            <span class="block w-10 h-[22px] rounded border-2 border-indigo-500 bg-indigo-100"></span>
+                            <span class="text-xs font-bold text-slate-800">표준 명함</span>
+                            <span class="text-[10px] text-slate-500">가로형 1.8:1</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center justify-center gap-1 text-center">
+                            <input type="radio" name="ratioChoice" value="square" class="hidden">
+                            <span class="block w-7 h-7 rounded border-2 border-indigo-500 bg-indigo-100"></span>
+                            <span class="text-xs font-bold text-slate-800">카톡 프로필 / 인스타 피드</span>
+                            <span class="text-[10px] text-slate-500">정사각형 1:1</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center justify-center gap-1 text-center">
+                            <input type="radio" name="ratioChoice" value="story" class="hidden">
+                            <span class="block w-[18px] h-8 rounded border-2 border-indigo-500 bg-indigo-100"></span>
+                            <span class="text-xs font-bold text-slate-800">인스타 스토리 / 배경화면</span>
+                            <span class="text-[10px] text-slate-500">세로형 9:16</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">이름 / 닉네임</label>
+                    <input type="text" id="inputName" placeholder="예: 김코딩" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">나의 꿈 / 직업 / 태그</label>
+                    <input type="text" id="inputTag" placeholder="예: 미래의 우주비행사 / 꼬마CEO" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">한 줄 소개 / 다짐</label>
+                    <input type="text" id="inputBio" placeholder="예: 세상을 멋지게 바꾸는 탐험가입니다!" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">명함 폰트 스타일 선택</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 text-center bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center">
+                            <input type="radio" name="fontChoice" value="font-jua" checked class="hidden">
+                            <span class="text-sm font-bold font-jua text-indigo-900">주아체 (귀여움)</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 text-center bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center">
+                            <input type="radio" name="fontChoice" value="font-dohyeon" class="hidden">
+                            <span class="text-sm font-bold font-dohyeon text-indigo-900">도현체 (시원함)</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 border-slate-200 rounded-xl p-2 text-center bg-slate-50 hover:bg-indigo-50 transition flex flex-col items-center">
+                            <input type="radio" name="fontChoice" value="font-black-han" class="hidden">
+                            <span class="text-xs font-bold font-black-han text-indigo-900 pt-1">검은고딕 (묵직함)</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">배경 색상 선택</label>
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-yellow-100 border-yellow-300 hover:bg-yellow-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-yellow-100" checked class="hidden">
+                            <span class="text-xs font-bold text-yellow-900">레몬 옐로</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-sky-100 border-sky-300 hover:bg-sky-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-sky-100" class="hidden">
+                            <span class="text-xs font-bold text-sky-900">소다 블루</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-pink-100 border-pink-300 hover:bg-pink-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-pink-100" class="hidden">
+                            <span class="text-xs font-bold text-pink-900">버블 핑크</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-emerald-100 border-emerald-300 hover:bg-emerald-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-emerald-100" class="hidden">
+                            <span class="text-xs font-bold text-emerald-900">애플 민트</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-purple-100 border-purple-300 hover:bg-purple-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-purple-100" class="hidden">
+                            <span class="text-xs font-bold text-purple-900">라벤더 퍼플</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-orange-100 border-orange-300 hover:bg-orange-200 transition flex flex-col items-center">
+                            <input type="radio" name="bgChoice" value="bg-orange-100" class="hidden">
+                            <span class="text-xs font-bold text-orange-900">피치 오렌지</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-3 border-t border-slate-200 shrink-0">
+                <button onclick="closeCreateModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-semibold hover:bg-slate-100">취소</button>
+                <button onclick="submitNewCard()" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-md">다음: 스티커 꾸미기로 <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 2. 일반 모드: 꾸미기 스튜디오 ===================== -->
+    <div id="studioModal" class="fixed inset-0 bg-slate-900 z-50 hidden flex flex-col overflow-hidden">
+        <header class="bg-slate-800 border-b border-slate-700 px-4 sm:px-6 py-3 flex flex-wrap gap-2 items-center justify-between text-white shrink-0">
+            <div class="flex items-center space-x-3">
+                <span class="bg-indigo-500 text-white text-xs px-3 py-1 rounded-full font-bold">꾸미기 모드</span>
+                <h2 class="text-lg font-bold font-jua">나만의 명함 스튜디오</h2>
+                <span id="studioRatioLabel" class="hidden sm:inline text-xs text-slate-300 bg-slate-700 px-2 py-1 rounded-lg"></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- 중간에 저장하지 않고 나갈 수 있는 버튼 -->
+                <button onclick="cancelStudioModal()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl flex items-center space-x-1.5 transition active:scale-95">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>나가기</span>
+                </button>
+                <button onclick="saveAndLockCard()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg flex items-center space-x-2 transition active:scale-95">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>저장 및 완료</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+            <div class="flex-1 flex items-center justify-center p-6 bg-slate-950 lg:overflow-y-auto">
+                <div id="targetStudioCard" class="frame-card relative rounded-2xl shadow-2xl p-6 flex flex-col justify-between transition-all overflow-hidden bg-yellow-100 border-2 border-yellow-300">
+                    <div id="studioBadgesContainer" class="flex flex-wrap gap-1.5 z-10"></div>
+                    <div id="studioContent" class="z-10 my-auto pt-2">
+                        <span id="previewCardTag" class="inline-block px-3 py-1 rounded-lg bg-indigo-700 text-white text-sm font-bold mb-2 shadow-sm">태그</span>
+                        <h2 id="previewCardName" class="text-3xl font-black tracking-wide mb-1.5 text-slate-900">이름</h2>
+                        <p id="previewCardBio" class="text-sm font-semibold opacity-90 leading-relaxed line-clamp-2 text-slate-800">한 줄 소개 내용입니다.</p>
+                    </div>
+
+                    <!-- 스티커 슬롯 (누르면 스티커가 빠져요) -->
+                    <div class="absolute top-4 right-4 z-20 flex flex-col space-y-2">
+                        <div id="slot1" class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl transition hover:scale-110 cursor-pointer" onclick="removeSticker(0)">
+                            <span class="text-slate-400 text-sm font-bold">1</span>
+                        </div>
+                        <div id="slot2" class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl transition hover:scale-110 cursor-pointer" onclick="removeSticker(1)">
+                            <span class="text-slate-400 text-sm font-bold">2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-96 bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 flex flex-col space-y-6 lg:overflow-y-auto shrink-0">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-300 mb-2 flex items-center justify-between">
+                        <span><i class="fa-solid fa-icons text-indigo-400 mr-1.5"></i>아이콘 스티커 선택</span>
+                    </h3>
+                    <div class="grid grid-cols-4 gap-2.5 mb-3">
+                        <button onclick="addSticker('<i class=\'fa-solid fa-crown text-amber-500\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-crown text-amber-500"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-rocket text-indigo-400\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-rocket text-indigo-400"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-star text-yellow-400\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-star text-yellow-400"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-trophy text-amber-400\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-trophy text-amber-400"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-heart text-rose-500\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-heart text-rose-500"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-gem text-cyan-400\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-gem text-cyan-400"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-bolt text-yellow-500\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-bolt text-yellow-500"></i></button>
+                        <button onclick="addSticker('<i class=\'fa-solid fa-shield-halved text-emerald-400\'></i>')" class="h-14 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center text-2xl shadow-sm transition active:scale-95"><i class="fa-solid fa-shield-halved text-emerald-400"></i></button>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-300 font-semibold pl-1">배치 위치:</span>
+                        <button onclick="setStickerSlot(0)" id="slotBtn0" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white transition">슬롯 1</button>
+                        <button onclick="setStickerSlot(1)" id="slotBtn1" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-slate-700 text-slate-300 transition">슬롯 2</button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2">💡 명함 위의 스티커를 누르면 다시 빠져요.</p>
+                </div>
+                <hr class="border-slate-800">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-300 mb-2">
+                        <i class="fa-solid fa-tag text-emerald-400 mr-1.5"></i>맞춤 문구 배지 추가
+                    </h3>
+                    <button onclick="openCustomTextModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold rounded-xl flex items-center justify-center space-x-2 transition active:scale-95">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>문구 배지 만들기</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 3. 바이브 코딩 모드 (스포트라이트 3단계) ===================== -->
+    <div id="codingStudioModal" class="fixed inset-0 bg-slate-950 z-50 hidden flex flex-col overflow-hidden">
+        <header class="bg-slate-800 border-b border-slate-700 px-4 sm:px-6 py-3 flex flex-wrap gap-3 items-center justify-between text-white shrink-0">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="bg-amber-500 text-slate-950 text-xs px-3 py-1 rounded-full font-bold">바이브 코딩 모드</span>
+                <h2 class="text-lg font-bold font-jua">AI와 함께 만드는 나만의 명함</h2>
+                <!-- 지금 몇 단계인지 보여주는 진행 표시 -->
+                <div id="vibeProgress" class="flex items-center gap-1.5 text-xs font-bold"></div>
+            </div>
+            <button onclick="closeCodingStudioModal()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl flex items-center space-x-1.5 transition active:scale-95">
+                <i class="fa-solid fa-xmark"></i>
+                <span>나가기</span>
+            </button>
+        </header>
+
+        <div class="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+            <!-- 왼쪽: Step 1 → 2 → 3 -->
+            <div id="vibeStepsPanel" class="w-full lg:w-[58%] p-4 sm:p-6 space-y-6 lg:overflow-y-auto">
+
+                <!-- ---------- Step 1 ---------- -->
+                <section id="vibeStep1" class="vibe-step rounded-3xl p-5 text-slate-100">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black">1</span>
+                            프롬프트(AI에게 보낼 주문서) 조립하기
+                            <span id="vibeDone1" class="hidden text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full">완료 ✓</span>
+                        </h3>
+                        <button id="vibeRedo1" onclick="setVibeStep(1)" class="hidden pointer-events-auto text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold shrink-0"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
+                    </div>
+                    <div class="speech-bubble bg-amber-100 text-amber-950 text-sm rounded-2xl px-4 py-3 mb-5">
+                        💬 <b>타자를 길게 칠 필요 없어요!</b> 아래 버튼들을 <b>콕콕 누르기만</b> 하면 AI에게 보낼 주문서(프롬프트)가 자동으로 완성돼요. 마지막에 <b>[프롬프트 완성 &amp; 복사하기]</b>를 눌러 주세요.
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-300 mb-2">① 결과물 규격(비율)</p>
+                            <div id="vibeRatioChipsStep1" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-300 mb-2">② 디자인 테마 고르기</p>
+                            <div id="vibeThemeList" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2"></div>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-300 mb-2">③ 나의 핵심 아이콘/테마</p>
+                            <div id="vibeIconChips" class="flex flex-wrap gap-2"></div>
+                            <input type="text" id="vibeIconCustom" oninput="updatePrompt()" placeholder="예: 고양이와 책, 축구공 등" class="hidden mt-2 w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-300 mb-2">④ 분위기/성격 키워드</p>
+                            <div id="vibeMoodChips" class="flex flex-wrap gap-2"></div>
+                            <input type="text" id="vibeMoodCustom" oninput="updatePrompt()" placeholder="예: 따뜻한, 엉뚱한, 반짝이는" class="hidden mt-2 w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-300 mb-2">⑤ 기본 정보 입력</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input type="text" id="vibeName" oninput="updatePrompt()" placeholder="이름 / 닉네임 (예: 김바이브)" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                <input type="text" id="vibeRole" oninput="updatePrompt()" placeholder="역할 / 꿈 (예: 미래의 게임 개발자)" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                <input type="text" id="vibeBio" oninput="updatePrompt()" placeholder="한 줄 소개 (예: 상상을 코드로 만드는 중!)" class="sm:col-span-2 w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-600 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm font-bold text-slate-300">⑥ 최종 프롬프트 미리보기 <span class="text-xs font-normal text-slate-400">(직접 고쳐도 돼요!)</span></p>
+                            </div>
+                            <!-- 학생이 직접 고쳤을 때 나오는 안내 -->
+                            <div id="promptLockNotice" class="hidden mb-2 text-xs bg-sky-900/60 border border-sky-500/50 text-sky-100 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                                <span>✋ 프롬프트를 직접 고쳐서 자동 조립을 잠시 멈췄어요. 버튼을 다시 누르고 싶다면 →</span>
+                                <button onclick="resetPromptAuto()" class="px-2.5 py-1 rounded-lg bg-sky-500 text-white font-bold">다시 자동으로 조립하기</button>
+                            </div>
+                            <textarea id="vibePromptBox" oninput="onPromptManualEdit()" rows="10" class="w-full bg-slate-900 text-emerald-200 text-sm p-4 rounded-2xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400 leading-relaxed"></textarea>
+                        </div>
+                        <button onclick="copyPromptAndNext()" class="w-full py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 text-lg font-black rounded-2xl shadow-lg transition active:scale-95">
+                            <i class="fa-solid fa-copy mr-2"></i>프롬프트 완성 &amp; 복사하기
+                        </button>
+                    </div>
+                </section>
+
+                <!-- ---------- Step 2 ---------- -->
+                <section id="vibeStep2" class="vibe-step rounded-3xl p-5 text-slate-100">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black">2</span>
+                            AI에게 받은 코드 붙여넣기
+                            <span id="vibeDone2" class="hidden text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full">완료 ✓</span>
+                        </h3>
+                        <button id="vibeRedo2" onclick="setVibeStep(2)" class="hidden pointer-events-auto text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold shrink-0"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
+                    </div>
+                    <div class="speech-bubble bg-amber-100 text-amber-950 text-sm rounded-2xl px-4 py-3 mb-5">
+                        💬 이제 AI에게 주문할 차례예요!
+                        <ol class="list-decimal ml-5 mt-1 space-y-0.5">
+                            <li>아래 버튼으로 <b>Gemini</b> 또는 <b>ChatGPT</b>를 열어요.</li>
+                            <li>입력창에 <b>Ctrl + V</b>로 프롬프트를 붙여넣고 전송해요.</li>
+                            <li>AI가 만들어 준 코드를 <b>전부 복사</b>해요. (코드 상자의 '복사' 버튼을 누르면 편해요)</li>
+                            <li>아래 검은 칸에 <b>Ctrl + V</b>로 붙여넣으면 오른쪽에 바로 미리보기가 나와요!</li>
+                        </ol>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold"><i class="fa-solid fa-gem mr-1.5"></i>Gemini 열기</a>
+                        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold"><i class="fa-solid fa-robot mr-1.5"></i>ChatGPT 열기</a>
+                        <button onclick="copyPromptOnly()" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm font-bold"><i class="fa-solid fa-copy mr-1.5"></i>프롬프트 한 번 더 복사</button>
+                    </div>
+                    <div class="flex items-center justify-between mb-2 px-1">
+                        <span class="text-xs font-bold text-slate-400"><i class="fa-solid fa-code text-amber-400 mr-1.5"></i>코드 붙여넣는 곳</span>
+                        <button onclick="resetCodingTemplate()" class="text-xs text-amber-400 hover:underline"><i class="fa-solid fa-eraser mr-1"></i>코드 지우기</button>
+                    </div>
+                    <textarea id="liveCodeEditor" oninput="renderLiveCodePreview()" rows="10" placeholder="<!-- 여기에 AI가 만들어 준 HTML 코드를 붙여넣어 주세요! (Ctrl + V) -->" class="w-full bg-slate-900 text-amber-200 font-mono text-xs p-4 rounded-2xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y leading-relaxed"></textarea>
+                    <button id="btnToStep3" onclick="goToStep3()" disabled class="mt-3 w-full py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 text-lg font-black rounded-2xl shadow-lg transition active:scale-95 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed disabled:active:scale-100">
+                        다음: 최종 확인하기 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </section>
+
+                <!-- ---------- Step 3 ---------- -->
+                <section id="vibeStep3" class="vibe-step rounded-3xl p-5 text-slate-100">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black">3</span>
+                            최종 확인 &amp; 저장하기
+                        </h3>
+                    </div>
+                    <div class="speech-bubble bg-amber-100 text-amber-950 text-sm rounded-2xl px-4 py-3 mb-5">
+                        💬 <b>미리보기</b>를 꼼꼼히 살펴봐요!
+                        <ul class="list-disc ml-5 mt-1 space-y-0.5">
+                            <li>글자가 잘리거나 박스 밖으로 넘치지 않았나요?</li>
+                            <li>미리보기 위쪽 버튼으로 <b>규격(비율)</b>을 바꿔서 확인할 수도 있어요.</li>
+                            <li>마음에 안 들면 AI에게 <b>"글자를 더 크게 해 줘"</b>처럼 다시 부탁하고, Step 2의 <b>[다시 수정하기]</b>로 코드를 바꿔 넣어요.</li>
+                        </ul>
+                    </div>
+                    <button onclick="saveCodingCard()" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-black rounded-2xl shadow-lg transition active:scale-95">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>완성 및 저장하기
+                    </button>
+                </section>
+            </div>
+
+            <!-- 오른쪽: 실시간 미리보기 -->
+            <div class="w-full lg:flex-1 bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 flex flex-col items-center justify-center lg:overflow-y-auto">
+                <p class="text-sm text-slate-300 font-bold mb-3"><i class="fa-solid fa-eye text-indigo-400 mr-1"></i>실시간 미리보기</p>
+                <div id="vibeRatioChipsPreview" class="flex flex-wrap justify-center gap-2 mb-4"></div>
+                <div id="livePreviewContainer" class="frame-card relative rounded-2xl shadow-2xl overflow-hidden bg-white"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 4. 맞춤 문구 배지 입력 모달 ===================== -->
+    <div id="customTextModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden modal-pop">
+            <div class="px-6 py-4 bg-indigo-600 text-white flex justify-between items-center">
+                <h3 class="text-base font-bold font-jua">문구 배지 작성</h3>
+                <button onclick="closeCustomTextModal()" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">문구 입력 (최대 10자)</label>
+                    <input type="text" id="badgeText" maxlength="10" placeholder="예: 우수체험" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">배지 배경 색상</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-amber-200 border-amber-500 flex items-center justify-center">
+                            <input type="radio" name="badgeColor" value="bg-amber-200 text-amber-950 font-bold" checked class="hidden">
+                            <span class="text-xs font-bold text-amber-950">노랑</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-rose-200 border-rose-500 flex items-center justify-center">
+                            <input type="radio" name="badgeColor" value="bg-rose-200 text-rose-950 font-bold" class="hidden">
+                            <span class="text-xs font-bold text-rose-950">핑크</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-indigo-200 border-indigo-500 flex items-center justify-center">
+                            <input type="radio" name="badgeColor" value="bg-indigo-200 text-indigo-950 font-bold" class="hidden">
+                            <span class="text-xs font-bold text-indigo-950">보라</span>
+                        </label>
+                        <label class="choice-label cursor-pointer border-2 rounded-xl p-2 text-center bg-emerald-200 border-emerald-500 flex items-center justify-center">
+                            <input type="radio" name="badgeColor" value="bg-emerald-200 text-emerald-950 font-bold" class="hidden">
+                            <span class="text-xs font-bold text-emerald-950">초록</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 flex justify-end space-x-2 border-t border-slate-200">
+                <button onclick="closeCustomTextModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-semibold">취소</button>
+                <button onclick="confirmAddCustomText()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 shadow-sm">추가하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 5. 완성 축하 모달 (저장 직후) ===================== -->
+    <div id="doneModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto modal-pop">
+            <div class="px-6 py-5 bg-gradient-to-r from-indigo-600 to-amber-500 text-white text-center">
+                <p class="text-3xl mb-1">🎉</p>
+                <h3 class="text-xl font-bold font-jua">완성! 정말 멋진 작품이에요!</h3>
+                <p class="text-sm text-white/90">이제 내 휴대폰이나 PC로 가져가 볼까요?</p>
+            </div>
+            <div class="p-6 flex flex-col items-center">
+                <div id="donePreview" class="w-full flex justify-center mb-5"></div>
+                <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button onclick="openQrFromDone()" class="py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow transition active:scale-95"><i class="fa-solid fa-qrcode mr-1.5"></i>📱 QR코드로 내 폰에 받기</button>
+                    <button onclick="downloadFromDone()" class="py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow transition active:scale-95"><i class="fa-solid fa-download mr-1.5"></i>💾 PC에 이미지 저장</button>
+                </div>
+                <button onclick="closeDoneModal()" class="mt-3 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl">닫기(완료)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 6. QR코드 스캔 모달 ===================== -->
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden modal-pop">
+            <div class="px-6 py-4 bg-emerald-500 text-white text-center shrink-0">
+                <h3 class="text-xl font-bold font-jua"><i class="fa-solid fa-qrcode mr-2"></i>QR코드로 내 폰에 받기</h3>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <!-- (1) 준비 중 화면 -->
+                <div id="qrLoading" class="py-12 text-center">
+                    <i class="fa-solid fa-spinner fa-spin text-5xl text-emerald-500 mb-4"></i>
+                    <p class="text-lg font-bold text-slate-800">QR코드를 만들고 있어요...</p>
+                    <p id="qrLoadingDetail" class="text-sm text-slate-500 mt-1">잠시만 기다려 주세요!</p>
+                </div>
+                <!-- (2) 성공 화면: 큰 QR코드 -->
+                <div id="qrSuccess" class="hidden text-center">
+                    <p class="text-lg font-bold text-slate-800">휴대폰 카메라로 QR코드를 비춰 보세요! 📸</p>
+                    <div class="flex justify-center my-4">
+                        <div id="qrCodeBox" class="p-4 bg-white rounded-2xl border-4 border-emerald-400 shadow-lg"></div>
+                    </div>
+                    <ol class="text-left text-sm bg-emerald-50 text-emerald-950 rounded-2xl p-4 space-y-1 list-decimal list-inside">
+                        <li>휴대폰 <b>카메라 앱</b>을 켜고 QR코드를 비춰요.</li>
+                        <li>화면에 뜨는 <b>링크</b>를 눌러요.</li>
+                        <li>열린 사진을 <b>꾹 눌러서 '이미지 저장'</b>(또는 '사진에 저장')을 골라요.</li>
+                    </ol>
+                    <p id="qrCountdownText" class="text-sm mt-3 text-rose-600 font-bold"><i class="fa-regular fa-clock mr-1"></i>개인정보 보호를 위해 사진은 <span id="qrCountdown">10:00</span> 뒤 인터넷에서 자동으로 사라져요.</p>
+                </div>
+                <!-- (3) 대체 화면: QR을 만들 수 없을 때 -->
+                <div id="qrFallback" class="hidden text-center">
+                    <div class="bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 text-sm text-left">
+                        <p class="font-bold mb-1">😢 지금은 QR코드를 만들 수 없어요</p>
+                        <p id="qrFallbackReason" class="mb-2 text-amber-800"></p>
+                        <p>대신 이렇게 해 보세요!</p>
+                        <ol class="list-decimal ml-5">
+                            <li>휴대폰 카메라로 아래 사진을 <b>직접 찍어서</b> 가져가기</li>
+                            <li>아래 <b>[PC에 이미지 저장]</b>을 누르고 선생님께 전송 부탁하기</li>
+                        </ol>
+                    </div>
+                    <img id="qrFallbackImg" alt="내가 만든 명함 사진" class="mx-auto my-4 max-h-[45vh] max-w-full rounded-2xl shadow-lg">
+                    <button onclick="downloadQrFallbackImage()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow transition active:scale-95"><i class="fa-solid fa-download mr-1.5"></i>💾 PC에 이미지 저장</button>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 shrink-0">
+                <button onclick="finishQrModal()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-2xl transition active:scale-95">닫기(완료)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 7. 갤러리 유지/삭제 선택 모달 (개인정보 보호) ===================== -->
+    <div id="privacyModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden modal-pop text-center">
+            <div class="p-6 sm:p-8">
+                <p class="text-5xl mb-3">🤔</p>
+                <h3 class="text-xl sm:text-2xl font-bold font-jua text-slate-900 mb-2">잠깐! 만든 프로필을<br>부스 갤러리에 남겨둘까요?</h3>
+                <p class="text-sm text-slate-500 mb-6">갤러리에 남기면 다른 친구들이 내 작품을 구경할 수 있어요.<br>내 이름이 남는 게 싫다면 지금 바로 지울 수 있어요.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onclick="keepCardInGallery()" class="py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-2xl shadow-lg transition active:scale-95">🌟 갤러리에 자랑하기<br><span class="text-xs font-bold">(유지)</span></button>
+                    <button onclick="deleteCardForPrivacy()" class="py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-lg transition active:scale-95">🔒 내 정보 지우기<br><span class="text-xs font-bold">(삭제)</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 8. 부스 설정 모달 (선생님용) ===================== -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto modal-pop">
+            <div class="px-6 py-4 bg-slate-800 text-white flex justify-between items-center">
+                <h3 class="text-base font-bold"><i class="fa-solid fa-gear mr-2"></i>부스 설정 (선생님용)</h3>
+                <button onclick="closeSettingsModal()" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-sm">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1 text-slate-700">
+                    <p class="font-bold text-slate-900">📱 QR 다운로드를 쓰려면 ImgBB 무료 API 키가 필요해요</p>
+                    <ol class="list-decimal ml-5 space-y-0.5">
+                        <li><a href="https://api.imgbb.com/" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline">api.imgbb.com</a>에 접속해 무료로 가입·로그인해요.</li>
+                        <li>[Get API key] 버튼을 눌러 나온 키를 복사해요.</li>
+                        <li>아래 칸에 붙여넣고 [저장]을 눌러요.</li>
+                    </ol>
+                    <p class="text-xs text-slate-500 pt-1">🔐 키는 코드에 들어가지 않고 <b>이 PC의 브라우저에만</b> 저장돼요. 업로드된 사진은 <b>10분 뒤 자동 삭제</b>되도록 설정되어 있어요.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ImgBB API 키</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="imgbbKeyInput" autocomplete="off" placeholder="여기에 API 키를 붙여넣어 주세요" class="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="toggleKeyVisible()" class="px-3 rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-100" title="키 보이기/숨기기"><i id="keyEyeIcon" class="fa-solid fa-eye"></i></button>
+                    </div>
+                    <p id="imgbbKeyStatus" class="text-xs mt-1.5"></p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 flex justify-between gap-2 border-t border-slate-200">
+                <button onclick="removeImgbbKey()" class="px-4 py-2 rounded-xl border border-rose-300 text-rose-600 text-xs font-semibold hover:bg-rose-50">키 지우기</button>
+                <button onclick="saveImgbbKey()" class="px-6 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 shadow-sm">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== JavaScript 로직 ===================== -->
+    <script>
+        // ------------------------------------------------------------
+        // [기본 설정값]
+        // ------------------------------------------------------------
+        const STORAGE_KEY = 'booth_business_cards_download_v12'; // 예전 카드도 그대로 불러오기 위해 같은 이름 사용
+        const IMGBB_KEY_STORAGE = 'talk_vibe_imgbb_key';           // 선생님이 입력한 ImgBB 키를 보관하는 이름
+        const QR_EXPIRE_SECONDS = 600;                               // QR용 사진이 인터넷에 남아 있는 시간(10분)
+
+        // 결과물 규격(비율) 3종
+        const RATIOS = {
+            card:   { label: '표준 명함',                     short: '명함',   desc: '가로형',   css: '1.8 / 1', frame: 'frame-card',   icon: 'fa-id-card' },
+            square: { label: '카카오톡 프로필 / 인스타 피드', short: '프로필', desc: '정사각형', css: '1 / 1',   frame: 'frame-square', icon: 'fa-square' },
+            story:  { label: '인스타 스토리 / 배경화면',      short: '스토리', desc: '세로형',   css: '9 / 16',  frame: 'frame-story',  icon: 'fa-mobile-screen' }
+        };
+        // 비율 이름이 없거나 잘못되면 '표준 명함'으로 처리해요 (예전 카드 호환)
+        function getRatio(key) {
+            return RATIOS[key] || RATIOS.card;
+        }
+
+        // [일반 모드] 예시 템플릿 5종 (모두 가상의 예시 인물이에요)
+        const NORMAL_TEMPLATES = [
+            { title: '1. 미래의 개발자',     emoji: '💻', name: '김코딩',   tag: '미래의 풀스택 개발자',   bio: '코드 한 줄로 세상을 바꾸고 싶어요!',            font: 'font-dohyeon',   bg: 'bg-emerald-100' },
+            { title: '2. 열정 만점 아티스트', emoji: '🎨', name: '이그림',   tag: '꿈꾸는 일러스트레이터', bio: '내 상상을 색깔로 표현하는 걸 좋아해요.',        font: 'font-jua',       bg: 'bg-pink-100' },
+            { title: '3. 우리 학교 인싸',     emoji: '😎', name: '박인싸',   tag: '우리 반 분위기 메이커', bio: '먼저 인사하는 사람이 될게요! 우리 친하게 지내요', font: 'font-jua',       bg: 'bg-orange-100' },
+            { title: '4. 프로 게이머',        emoji: '🎮', name: '최컨트롤', tag: '미래의 e스포츠 국가대표', bio: '반응속도 0.1초! 팀워크로 승리를 만들어요.',   font: 'font-black-han', bg: 'bg-purple-100' },
+            { title: '5. 우주 탐험가',        emoji: '🚀', name: '한별',     tag: '꼬마 우주비행사',       bio: '언젠가 화성에서 지구를 바라볼 거예요.',         font: 'font-dohyeon',   bg: 'bg-sky-100' }
+        ];
+
+        // [바이브 코딩] 프롬프트 테마 5종
+        const PROMPT_THEMES = [
+            { name: '① 사이버펑크 네온',   emoji: '🌃', gradient: 'from-fuchsia-600 to-cyan-500',  prompt: '어두운 남색·검정 배경에 형광 핑크와 시안색 네온 글로우 효과, 빛나는 테두리와 미래 도시 같은 분위기' },
+            { name: '② 귀여운 픽셀 레트로', emoji: '👾', gradient: 'from-yellow-400 to-red-500',    prompt: '8비트 게임 화면처럼 각진 픽셀 느낌 테두리, 쨍한 원색, 레트로 게임 UI 분위기 (둥근 모서리는 최소로)' },
+            { name: '③ 감성 파스텔 다꾸',   emoji: '🎀', gradient: 'from-pink-200 to-violet-300',   prompt: '부드러운 파스텔톤 배경에 마스킹테이프·스티커·손글씨 메모처럼 꾸민 다이어리 꾸미기(다꾸) 분위기' },
+            { name: '④ 시크한 다크 모던',   emoji: '🖤', gradient: 'from-slate-700 to-black',       prompt: '검정·짙은 회색 배경에 흰 글씨, 넓은 여백과 얇은 선을 쓴 고급스럽고 미니멀한 분위기' },
+            { name: '⑤ 자연주의 보태니컬',  emoji: '🌿', gradient: 'from-lime-200 to-emerald-600',  prompt: '크림·올리브·연두 같은 자연의 색, 나뭇잎과 꽃 아이콘을 곁들인 따뜻하고 편안한 분위기' }
+        ];
+
+        // [바이브 코딩] 핵심 아이콘/테마 칩
+        const VIBE_ICONS = [
+            { key: 'animal', label: '🐶 동물',      text: '동물 (강아지·고양이 같은 귀여운 동물)' },
+            { key: 'plant',  label: '🌿 식물',      text: '식물 (나뭇잎·꽃·새싹)' },
+            { key: 'space',  label: '🚀 우주/과학', text: '우주/과학 (로켓·행성·실험 도구)' },
+            { key: 'game',   label: '🎮 게임/음악', text: '게임/음악 (게임패드·헤드폰·음표)' },
+            { key: 'custom', label: '✏️ 기타(직접쓰기)', text: '' }
+        ];
+        // [바이브 코딩] 분위기/성격 칩
+        const VIBE_MOODS = [
+            { key: 'lively',  label: '활기찬',          text: '활기찬' },
+            { key: 'calm',    label: '차분한',          text: '차분한' },
+            { key: 'mystic',  label: '신비로운',        text: '신비로운' },
+            { key: 'funny',   label: '유머러스한',      text: '유머러스한' },
+            { key: 'custom',  label: '기타(직접쓰기)',  text: '' }
+        ];
+
+        // AI가 오류 없는 코드를 주도록 항상 붙는 기술 조건
+        const TECH_RULE = '주의사항: 이미 Tailwind CSS와 FontAwesome 6가 적용된 상태야. 선택한 비율 박스 안에 꽉 차게 들어갈 순수 HTML `<div>` 조각만 작성해 줘. `<html>`, `<body>` 태그나 마크다운 코드블록(```) 설명 없이 오직 HTML 태그만 출력해.';
+
+        // ------------------------------------------------------------
+        // [상태 변수] 지금 화면이 어떤 상태인지 기억하는 곳
+        // ------------------------------------------------------------
+        let cards = [];
+        let activeStudioData = {
+            name: '',
+            tag: '',
+            bio: '',
+            fontClass: 'font-jua',
+            bgClass: 'bg-yellow-100 border-2 border-yellow-300',
+            ratio: 'card',
+            stickers: [null, null],
+            badges: []
+        };
+        let currentStickerSlot = 0;
+
+        // 바이브 코딩 모드 상태
+        let vibeStep = 1;
+        let promptEdited = false; // 학생이 프롬프트를 직접 고쳤는지 여부
+        let vibeState = { ratio: 'card', theme: 0, icon: null, mood: null };
+
+        // 완성 모달 / QR / 개인정보 선택 모달에서 다루는 카드 정보
+        let doneCardId = null;
+        let privacyCardId = null;
+        let qrState = { cardId: null, dataUrl: '', fileName: '', timer: null, token: 0, fromDone: false };
+
+        // ------------------------------------------------------------
+        // [시작] 페이지가 열리면 저장된 카드를 불러와요
+        // ------------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCardsFromStorage();
+            renderNormalTemplateButtons();
+            refreshRadioHighlight();
+        });
+
+        // 라디오 버튼(폰트/배경/비율/배지 색)을 고를 때마다 선택 테두리를 다시 그려요
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.type === 'radio') refreshRadioHighlight();
+        });
+
+        function refreshRadioHighlight() {
+            document.querySelectorAll('label.choice-label').forEach(label => {
+                const input = label.querySelector('input[type="radio"]');
+                if (!input) return;
+                label.classList.toggle('ring-4', input.checked);
+                label.classList.toggle('ring-indigo-500', input.checked);
+                label.classList.toggle('ring-offset-1', input.checked);
+            });
+        }
+
+        // ------------------------------------------------------------
+        // [공용 도구] 토스트 알림, 모달 열고 닫기
+        // ------------------------------------------------------------
+        function showToast(message, type = 'success', duration = 3200) {
+            const colors = {
+                success: 'bg-emerald-500 text-white',
+                info:    'bg-indigo-600 text-white',
+                warn:    'bg-amber-400 text-slate-950',
+                error:   'bg-rose-500 text-white'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-in w-full text-center px-6 py-4 rounded-2xl shadow-2xl text-base sm:text-lg font-bold ${colors[type] || colors.success}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            // 정해진 시간이 지나면 스르륵 사라지게
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.4s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 400);
+            }, duration);
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // ------------------------------------------------------------
+        // [저장소] LocalStorage에 카드 목록을 저장하고 불러오기
+        // ------------------------------------------------------------
+        function loadCardsFromStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                cards = saved ? JSON.parse(saved) : [];
+            } catch (e) {
+                cards = [];
+            }
+            renderGrid();
+        }
+
+        function saveCardsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+            } catch (e) {
+                console.error('저장 실패', e);
+                showToast('저장 공간이 부족해서 저장하지 못했어요. 선생님께 알려 주세요!', 'error');
+            }
+        }
+
+        // ------------------------------------------------------------
+        // [카드 그리기] 카드 1장을 화면에 그릴 수 있는 상자로 만들어요
+        //  - 갤러리와 완성 모달에서 같이 사용해요
+        // ------------------------------------------------------------
+        function buildCardFrame(card, elementId) {
+            const ratio = getRatio(card.ratio);
+            const frameEl = document.createElement('div');
+            frameEl.id = elementId;
+
+            // (1) 바이브 코딩으로 만든 카드: AI가 만든 HTML을 그대로 보여줘요
+            if (card.htmlContent) {
+                const safeHtml = sanitizeHtml(card.htmlContent);
+                if (card.ratio) {
+                    // 새 방식: 비율 박스 안을 AI 코드가 꽉 채워요
+                    frameEl.className = `${ratio.frame} relative rounded-2xl shadow-lg overflow-hidden ${card.bgClass || 'bg-white'}`;
+                    frameEl.innerHTML = `<div class="absolute inset-0 overflow-hidden pointer-events-none">${safeHtml}</div>`;
+                } else {
+                    // 예전 방식으로 저장된 코딩 카드는 예전 모습 그대로
+                    frameEl.className = `${ratio.frame} relative rounded-2xl shadow-lg p-6 flex flex-col justify-between overflow-hidden ${card.bgClass || 'bg-white'}`;
+                    frameEl.innerHTML = `
+                        <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none p-4 flex flex-col justify-between">
+                            ${safeHtml}
+                        </div>
+                    `;
+                }
+                return frameEl;
+            }
+
+            // (2) 일반 모드로 만든 카드: 이름/태그/소개 + 스티커 + 배지
+            const isStory = card.ratio === 'story';
+            frameEl.className = `${ratio.frame} relative rounded-2xl shadow-lg p-6 flex flex-col justify-between overflow-hidden ${card.bgClass}`;
+
+            let stickersHtml = '';
+            if (card.stickers) {
+                const s1 = card.stickers[0] ? `<div class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl">${card.stickers[0]}</div>` : '';
+                const s2 = card.stickers[1] ? `<div class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl">${card.stickers[1]}</div>` : '';
+                if (card.stickers[0] || card.stickers[1]) {
+                    stickersHtml = `<div class="absolute top-4 right-4 z-20 flex flex-col space-y-2">${s1}${s2}</div>`;
+                }
+            }
+
+            let badgesHtml = '';
+            if (card.badges && card.badges.length > 0) {
+                badgesHtml = `<div class="flex flex-wrap gap-1.5 z-10 mb-2 ${isStory ? 'justify-center' : ''}">` +
+                    card.badges.map(b => `<span class="px-3 py-1 rounded-full text-xs font-bold ${b.color} shadow-sm">${escapeHtml(b.text)}</span>`).join('') +
+                    `</div>`;
+            }
+
+            frameEl.innerHTML = `
+                ${badgesHtml}
+                <div class="z-10 my-auto ${isStory ? 'text-center' : ''}">
+                    <span class="inline-block px-3 py-1 rounded-lg bg-indigo-700 text-white text-xs font-bold mb-2 shadow-sm">${escapeHtml(card.tag || '체험 명함')}</span>
+                    <h2 class="text-3xl font-black ${card.fontClass || 'font-jua'} tracking-wide mb-1.5 text-slate-900">${escapeHtml(card.name)}</h2>
+                    <p class="text-sm font-semibold opacity-90 leading-relaxed ${isStory ? 'line-clamp-4' : 'line-clamp-2'} text-slate-800">${escapeHtml(card.bio)}</p>
+                </div>
+                ${stickersHtml}
+            `;
+            return frameEl;
+        }
+
+        // ------------------------------------------------------------
+        // [갤러리] 저장된 카드들을 화면에 쭉 보여줘요
+        // ------------------------------------------------------------
+        function renderGrid() {
+            const grid = document.getElementById('cardGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            if (cards.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            cards.forEach((card) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'flex flex-col items-center';
+
+                const frameEl = buildCardFrame(card, card.id);
+                frameEl.classList.add('mb-3');
+
+                // 규격 표시 꼬리표
+                const ratioTag = document.createElement('p');
+                ratioTag.className = 'text-[11px] text-slate-500 mb-2';
+                ratioTag.innerHTML = `<i class="fa-solid ${getRatio(card.ratio).icon} mr-1"></i>${getRatio(card.ratio).label}`;
+
+                // 카드 아래 버튼들: QR 받기 / PC 저장 / 삭제
+                const actionBox = document.createElement('div');
+                actionBox.className = 'w-full max-w-[420px] grid grid-cols-[1fr_1fr_auto] gap-2';
+
+                const qrBtn = document.createElement('button');
+                qrBtn.className = 'py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 active:scale-95';
+                qrBtn.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>📱 QR코드로 내 폰에 받기</span>`;
+                qrBtn.onclick = () => openQrModal(card.id, card.id, false);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 active:scale-95';
+                downloadBtn.innerHTML = `<i class="fa-solid fa-download"></i><span>💾 PC에 이미지 저장</span>`;
+                downloadBtn.onclick = () => downloadCardAsImage(card.id, makeFileName(card));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'w-11 py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center active:scale-95';
+                deleteBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
+                deleteBtn.title = '명함 삭제';
+                deleteBtn.onclick = () => deleteCard(card.id);
+
+                actionBox.appendChild(qrBtn);
+                actionBox.appendChild(downloadBtn);
+                actionBox.appendChild(deleteBtn);
+
+                cardEl.appendChild(frameEl);
+                cardEl.appendChild(ratioTag);
+                cardEl.appendChild(actionBox);
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function deleteCard(cardId) {
+            if (confirm('이 명함을 삭제할까요? 삭제하면 되돌릴 수 없어요.')) {
+                removeCardById(cardId);
+                showToast('명함을 삭제했어요.', 'info');
+            }
+        }
+
+        // 카드 목록과 저장소에서 카드 1장을 지우는 공용 함수
+        function removeCardById(cardId) {
+            cards = cards.filter(c => c.id !== cardId);
+            saveCardsToStorage();
+            renderGrid();
+        }
+
+        // ------------------------------------------------------------
+        // [이미지 저장] html2canvas로 화면 속 카드를 사진으로 바꿔요
+        // ------------------------------------------------------------
+        function captureElement(elementId, scale = 3) {
+            const targetElement = document.getElementById(elementId);
+            if (!targetElement) return Promise.reject(new Error('카드를 찾을 수 없어요.'));
+            return html2canvas(targetElement, { scale: scale, useCORS: true, backgroundColor: null });
+        }
+
+        // 파일 이름 만들기 (파일 이름에 쓸 수 없는 글자는 빼요)
+        function makeFileName(card) {
+            const base = ((card && card.name) || '명함').replace(/[\\/:*?"<>|]/g, '').trim() || '명함';
+            return `${base}_${getRatio(card && card.ratio).short}.png`;
+        }
+
+        function downloadDataUrl(dataUrl, fileName) {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            link.click();
+        }
+
+        function downloadCardAsImage(elementId, fileName) {
+            captureElement(elementId, 3).then(canvas => {
+                downloadDataUrl(canvas.toDataURL('image/png'), fileName);
+                showToast('💾 이미지를 PC에 저장했어요! (다운로드 폴더를 확인하세요)', 'success');
+            }).catch(err => {
+                console.error('이미지 저장 실패:', err);
+                showToast('이미지 저장 중 오류가 발생했어요.', 'error');
+            });
+        }
+
+        // ------------------------------------------------------------
+        // [일반 모드] 1단계: 정보 입력 모달
+        // ------------------------------------------------------------
+        function renderNormalTemplateButtons() {
+            const list = document.getElementById('normalTemplateList');
+            list.innerHTML = NORMAL_TEMPLATES.map((t, i) => `
+                <button type="button" onclick="applyNormalTemplate(${i})" class="px-3 py-2 rounded-xl bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-900 text-xs sm:text-sm font-bold shadow-sm transition active:scale-95">
+                    ${t.emoji} ${t.title}
+                </button>
+            `).join('');
+        }
+
+        // 템플릿을 누르면 입력칸·폰트·배경이 자동으로 채워져요
+        function applyNormalTemplate(index) {
+            const t = NORMAL_TEMPLATES[index];
+            document.getElementById('inputName').value = t.name;
+            document.getElementById('inputTag').value = t.tag;
+            document.getElementById('inputBio').value = t.bio;
+            const fontInput = document.querySelector(`input[name="fontChoice"][value="${t.font}"]`);
+            const bgInput = document.querySelector(`input[name="bgChoice"][value="${t.bg}"]`);
+            if (fontInput) fontInput.checked = true;
+            if (bgInput) bgInput.checked = true;
+            refreshRadioHighlight();
+            showToast(`"${t.title}" 템플릿을 불러왔어요! 이제 내 정보로 바꿔 보세요 ✏️`, 'info', 2500);
+        }
+
+        function openCreateModal() {
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputTag').value = '';
+            document.getElementById('inputBio').value = '';
+            refreshRadioHighlight();
+            openModal('createModal');
+        }
+        function closeCreateModal() {
+            closeModal('createModal');
+        }
+
+        function submitNewCard() {
+            const name = document.getElementById('inputName').value.trim();
+            const tag = document.getElementById('inputTag').value.trim();
+            const bio = document.getElementById('inputBio').value.trim();
+            const bgChoice = document.querySelector('input[name="bgChoice"]:checked').value;
+            const fontChoice = document.querySelector('input[name="fontChoice"]:checked').value;
+            const ratioChoice = document.querySelector('input[name="ratioChoice"]:checked').value;
+
+            if (!name) {
+                showToast('이름 또는 닉네임을 입력해 주세요!', 'warn');
+                return;
+            }
+
+            activeStudioData = {
+                id: 'card_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: name,
+                tag: tag || '체험 명함',
+                bio: bio || '소개글이 없습니다.',
+                fontClass: fontChoice,
+                bgClass: bgChoice,
+                ratio: ratioChoice,
+                stickers: [null, null],
+                badges: []
+            };
+
+            const isStory = ratioChoice === 'story';
+            document.getElementById('previewCardTag').innerText = activeStudioData.tag;
+            document.getElementById('previewCardName').innerText = activeStudioData.name;
+            document.getElementById('previewCardName').className = `text-3xl font-black tracking-wide mb-1.5 text-slate-900 ${activeStudioData.fontClass}`;
+            document.getElementById('previewCardBio').innerText = activeStudioData.bio;
+            document.getElementById('previewCardBio').className = `text-sm font-semibold opacity-90 leading-relaxed ${isStory ? 'line-clamp-4' : 'line-clamp-2'} text-slate-800`;
+
+            // 고른 비율에 맞게 스튜디오 프레임 모양을 바꿔요
+            const studioCard = document.getElementById('targetStudioCard');
+            studioCard.className = `${getRatio(ratioChoice).frame} relative rounded-2xl shadow-2xl p-6 flex flex-col justify-between transition-all overflow-hidden ${activeStudioData.bgClass}`;
+            document.getElementById('studioContent').className = `z-10 my-auto pt-2 ${isStory ? 'text-center' : ''}`;
+            document.getElementById('studioBadgesContainer').className = `flex flex-wrap gap-1.5 z-10 ${isStory ? 'justify-center' : ''}`;
+            document.getElementById('studioRatioLabel').textContent = getRatio(ratioChoice).label;
+
+            document.getElementById('studioBadgesContainer').innerHTML = '';
+            setStickerSlot(0);
+            updateStudioStickers();
+
+            closeCreateModal();
+            openModal('studioModal');
+        }
+
+        // ------------------------------------------------------------
+        // [일반 모드] 2단계: 스티커·배지 꾸미기
+        // ------------------------------------------------------------
+        function cancelStudioModal() {
+            if (confirm('만들던 명함을 취소하고 나갈까요? (작성한 내용은 저장되지 않아요)')) {
+                closeModal('studioModal');
+            }
+        }
+
+        function setStickerSlot(slotIndex) {
+            currentStickerSlot = slotIndex;
+            const on = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white transition';
+            const off = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-slate-700 text-slate-300 transition';
+            document.getElementById('slotBtn0').className = slotIndex === 0 ? on : off;
+            document.getElementById('slotBtn1').className = slotIndex === 1 ? on : off;
+        }
+
+        function addSticker(stickerHtml) {
+            activeStudioData.stickers[currentStickerSlot] = stickerHtml;
+            updateStudioStickers();
+        }
+
+        function removeSticker(slotIndex) {
+            activeStudioData.stickers[slotIndex] = null;
+            updateStudioStickers();
+        }
+
+        function updateStudioStickers() {
+            const s1 = activeStudioData.stickers[0] ? `<div class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl">${activeStudioData.stickers[0]}</div>` : `<span class="text-slate-400 text-sm font-bold">1</span>`;
+            const s2 = activeStudioData.stickers[1] ? `<div class="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border-2 border-slate-200 flex items-center justify-center text-2xl">${activeStudioData.stickers[1]}</div>` : `<span class="text-slate-400 text-sm font-bold">2</span>`;
+
+            document.getElementById('slot1').innerHTML = s1;
+            document.getElementById('slot2').innerHTML = s2;
+        }
+
+        function openCustomTextModal() {
+            document.getElementById('badgeText').value = '';
+            refreshRadioHighlight();
+            openModal('customTextModal');
+        }
+        function closeCustomTextModal() {
+            closeModal('customTextModal');
+        }
+
+        function confirmAddCustomText() {
+            const text = document.getElementById('badgeText').value.trim();
+            const color = document.querySelector('input[name="badgeColor"]:checked').value;
+            if (!text) {
+                showToast('배지에 들어갈 문구를 입력해 주세요!', 'warn');
+                return;
+            }
+            activeStudioData.badges.push({ text, color });
+
+            const container = document.getElementById('studioBadgesContainer');
+            container.innerHTML = activeStudioData.badges.map(b => `<span class="px-3 py-1 rounded-full text-xs font-bold ${b.color} shadow-sm">${escapeHtml(b.text)}</span>`).join('');
+
+            closeCustomTextModal();
+        }
+
+        function saveAndLockCard() {
+            cards.unshift(activeStudioData);
+            saveCardsToStorage();
+            closeModal('studioModal');
+            renderGrid();
+            openDoneModal(activeStudioData);
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] 열기 / 닫기 / 처음 상태로 되돌리기
+        // ------------------------------------------------------------
+        function openCodingStudioModal() {
+            // 이전 학생의 흔적이 남지 않도록 모두 초기화해요
+            vibeState = { ratio: 'card', theme: 0, icon: null, mood: null };
+            promptEdited = false;
+            ['vibeName', 'vibeRole', 'vibeBio', 'vibeIconCustom', 'vibeMoodCustom', 'liveCodeEditor'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('promptLockNotice').classList.add('hidden');
+
+            renderVibeChips();
+            renderVibeRatioChips();
+            applyVibePreviewFrame();
+            renderLiveCodePreview();
+            updatePrompt();
+            openModal('codingStudioModal');
+            setVibeStep(1);
+        }
+
+        function closeCodingStudioModal() {
+            const hasWork = document.getElementById('liveCodeEditor').value.trim() || document.getElementById('vibeName').value.trim();
+            if (hasWork && !confirm('바이브 코딩을 그만두고 나갈까요? (저장하지 않은 내용은 사라져요)')) return;
+            closeModal('codingStudioModal');
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] 스포트라이트: 지금 단계만 밝게, 나머지는 어둡게
+        // ------------------------------------------------------------
+        const STEP_ACTIVE = ['opacity-100', 'ring-4', 'ring-amber-400', 'bg-slate-800'];
+        const STEP_INACTIVE = ['opacity-40', 'pointer-events-none', 'bg-slate-900', 'ring-1', 'ring-slate-700'];
+
+        function setVibeStep(n) {
+            vibeStep = n;
+            for (let i = 1; i <= 3; i++) {
+                const box = document.getElementById('vibeStep' + i);
+                box.classList.remove(...STEP_ACTIVE, ...STEP_INACTIVE);
+                box.classList.add(...(i === n ? STEP_ACTIVE : STEP_INACTIVE));
+
+                // 이미 끝낸 단계에는 '완료' 표시와 [다시 수정하기] 버튼을 보여줘요
+                const isDone = i < n;
+                const redo = document.getElementById('vibeRedo' + i);
+                const done = document.getElementById('vibeDone' + i);
+                if (redo) redo.classList.toggle('hidden', !isDone);
+                if (done) done.classList.toggle('hidden', !isDone);
+            }
+            renderVibeProgress();
+
+            // 지금 단계가 화면에 잘 보이도록 부드럽게 스크롤
+            setTimeout(() => {
+                document.getElementById('vibeStep' + n).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        }
+
+        // 위쪽의 Step 1 → 2 → 3 진행 표시
+        function renderVibeProgress() {
+            const labels = ['프롬프트', '코드 붙여넣기', '저장'];
+            document.getElementById('vibeProgress').innerHTML = labels.map((label, idx) => {
+                const step = idx + 1;
+                let cls = 'bg-slate-700 text-slate-400';
+                if (step === vibeStep) cls = 'bg-amber-400 text-slate-950';
+                else if (step < vibeStep) cls = 'bg-emerald-500 text-white';
+                const arrow = step < 3 ? '<i class="fa-solid fa-chevron-right text-slate-500 text-[10px]"></i>' : '';
+                return `<span class="px-2.5 py-1 rounded-full ${cls}">Step ${step}. ${label}</span>${arrow}`;
+            }).join('');
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] Step 1: 칩 버튼 그리기와 선택
+        // ------------------------------------------------------------
+        function chipClass(selected) {
+            return selected
+                ? 'px-3.5 py-2 rounded-full text-sm font-bold bg-amber-400 text-slate-950 ring-2 ring-amber-200 shadow transition active:scale-95'
+                : 'px-3.5 py-2 rounded-full text-sm font-bold bg-slate-700 text-slate-200 hover:bg-slate-600 transition active:scale-95';
+        }
+
+        function renderVibeChips() {
+            // 테마 카드 5개
+            document.getElementById('vibeThemeList').innerHTML = PROMPT_THEMES.map((t, i) => `
+                <button type="button" onclick="selectVibeTheme(${i})" class="p-2 rounded-2xl bg-slate-900 text-left transition active:scale-95 ${vibeState.theme === i ? 'ring-4 ring-amber-400' : 'ring-1 ring-slate-600 hover:ring-slate-400'}">
+                    <div class="h-12 rounded-xl bg-gradient-to-r ${t.gradient} flex items-center justify-center text-2xl">${t.emoji}</div>
+                    <div class="text-xs font-bold mt-1.5 text-slate-100">${t.name}</div>
+                </button>
+            `).join('');
+
+            // 핵심 아이콘/테마 칩
+            document.getElementById('vibeIconChips').innerHTML = VIBE_ICONS.map(c => `
+                <button type="button" onclick="selectVibeIcon('${c.key}')" class="${chipClass(vibeState.icon === c.key)}">${c.label}</button>
+            `).join('');
+
+            // 분위기 칩
+            document.getElementById('vibeMoodChips').innerHTML = VIBE_MOODS.map(c => `
+                <button type="button" onclick="selectVibeMood('${c.key}')" class="${chipClass(vibeState.mood === c.key)}">${c.label}</button>
+            `).join('');
+
+            // '기타(직접쓰기)'를 골랐을 때만 입력창을 보여줘요
+            document.getElementById('vibeIconCustom').classList.toggle('hidden', vibeState.icon !== 'custom');
+            document.getElementById('vibeMoodCustom').classList.toggle('hidden', vibeState.mood !== 'custom');
+        }
+
+        function selectVibeTheme(i) {
+            vibeState.theme = i;
+            renderVibeChips();
+            updatePrompt();
+        }
+
+        // 같은 칩을 한 번 더 누르면 선택이 풀려요
+        function selectVibeIcon(key) {
+            vibeState.icon = vibeState.icon === key ? null : key;
+            renderVibeChips();
+            if (vibeState.icon === 'custom') document.getElementById('vibeIconCustom').focus();
+            updatePrompt();
+        }
+
+        function selectVibeMood(key) {
+            vibeState.mood = vibeState.mood === key ? null : key;
+            renderVibeChips();
+            if (vibeState.mood === 'custom') document.getElementById('vibeMoodCustom').focus();
+            updatePrompt();
+        }
+
+        // 비율 칩은 Step 1과 미리보기 위쪽, 두 군데에 똑같이 그려요
+        function renderVibeRatioChips() {
+            const html = Object.keys(RATIOS).map(key => `
+                <button type="button" onclick="setVibeRatio('${key}')" class="${chipClass(vibeState.ratio === key)}">
+                    <i class="fa-solid ${RATIOS[key].icon} mr-1"></i>${RATIOS[key].label} <span class="text-xs opacity-70">(${RATIOS[key].desc})</span>
+                </button>
+            `).join('');
+            document.getElementById('vibeRatioChipsStep1').innerHTML = html;
+            document.getElementById('vibeRatioChipsPreview').innerHTML = html;
+        }
+
+        function setVibeRatio(key) {
+            vibeState.ratio = key;
+            renderVibeRatioChips();
+            applyVibePreviewFrame();
+            updatePrompt();
+            if (vibeStep >= 2) {
+                showToast(`규격을 '${RATIOS[key].label}'(으)로 바꿨어요. 모양이 어색하면 AI에게 새 비율로 다시 부탁해 보세요!`, 'info', 3500);
+            }
+        }
+
+        // 미리보기 상자의 모양(비율)을 바꿔요
+        function applyVibePreviewFrame() {
+            document.getElementById('livePreviewContainer').className = `${getRatio(vibeState.ratio).frame} relative rounded-2xl shadow-2xl overflow-hidden bg-white`;
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] Step 1: 프롬프트 자동 조립
+        // ------------------------------------------------------------
+        function getInputValue(id) {
+            return document.getElementById(id).value.trim();
+        }
+
+        // 칩에서 고른 값을 문장으로 바꿔요 ('기타'면 직접 쓴 글을 사용)
+        function resolveChoice(list, key, customInputId) {
+            if (!key) return '';
+            if (key === 'custom') return getInputValue(customInputId);
+            const found = list.find(c => c.key === key);
+            return found ? found.text : '';
+        }
+
+        function buildPromptText() {
+            const theme = PROMPT_THEMES[vibeState.theme];
+            const ratio = getRatio(vibeState.ratio);
+            const icon = resolveChoice(VIBE_ICONS, vibeState.icon, 'vibeIconCustom');
+            const mood = resolveChoice(VIBE_MOODS, vibeState.mood, 'vibeMoodCustom');
+            const name = getInputValue('vibeName') || '(이름을 입력해 주세요)';
+            const role = getInputValue('vibeRole') || '(역할/꿈을 입력해 주세요)';
+            const bio = getInputValue('vibeBio') || '(한 줄 소개를 입력해 주세요)';
+
+            const lines = [
+                '너는 센스 있는 웹 디자이너야. 아래 조건에 맞춰 나만의 디지털 ' + ratio.label + ' 디자인을 HTML로 만들어 줘.',
+                '',
+                '■ 디자인 테마: ' + theme.name.replace(/^[①-⑤]\s*/, '') + ' — ' + theme.prompt,
+                '■ 핵심 아이콘/테마: ' + (icon || '테마에 어울리게 자유롭게') + ' → 어울리는 FontAwesome 6 아이콘(<i class="fa-solid ..."></i>)을 2~3개 넣어 줘.',
+                '■ 분위기/성격: ' + (mood ? mood + ' 느낌' : '테마에 어울리게 자유롭게'),
+                '■ 들어갈 내용:',
+                '  - 이름: ' + name,
+                '  - 역할/꿈: ' + role,
+                '  - 한 줄 소개: ' + bio,
+                '■ 크기/비율: ' + ratio.label + '(' + ratio.desc + ', aspect-ratio: ' + ratio.css + ') 박스 안에 꽉 차게 디자인해 줘. 가장 바깥 <div>에는 반드시 w-full h-full 클래스를 넣고, 글자가 박스 밖으로 넘치거나 잘리지 않게 해 줘.',
+                '',
+                TECH_RULE
+            ];
+            return lines.join('\n');
+        }
+
+        // 버튼을 누르거나 정보를 입력할 때마다 프롬프트를 새로 조립해요
+        function updatePrompt() {
+            if (promptEdited) {
+                // 학생이 직접 고친 내용은 함부로 덮어쓰지 않아요
+                document.getElementById('promptLockNotice').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('vibePromptBox').value = buildPromptText();
+        }
+
+        function onPromptManualEdit() {
+            promptEdited = true;
+            document.getElementById('promptLockNotice').classList.remove('hidden');
+        }
+
+        function resetPromptAuto() {
+            promptEdited = false;
+            document.getElementById('promptLockNotice').classList.add('hidden');
+            updatePrompt();
+            showToast('버튼으로 고른 내용으로 프롬프트를 다시 조립했어요!', 'info', 2500);
+        }
+
+        // 클립보드에 글자를 복사하는 함수 (안 되면 예전 방식으로 한 번 더 시도)
+        async function copyText(text) {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch (e) { /* 아래 예전 방식으로 다시 시도해요 */ }
+            try {
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                temp.style.position = 'fixed';
+                temp.style.opacity = '0';
+                document.body.appendChild(temp);
+                temp.select();
+                const ok = document.execCommand('copy');
+                temp.remove();
+                return ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function copyPromptAndNext() {
+            const text = document.getElementById('vibePromptBox').value.trim();
+            if (!text) {
+                showToast('프롬프트가 비어 있어요. 위의 버튼들을 먼저 골라 주세요!', 'warn');
+                return;
+            }
+            const ok = await copyText(text);
+            if (ok) {
+                showToast('프롬프트가 복사되었습니다! 이제 AI(Gemini/ChatGPT) 창에 붙여넣으세요!', 'success', 4500);
+            } else {
+                showToast('자동 복사가 안 됐어요. 프롬프트 칸을 눌러 Ctrl+A → Ctrl+C로 직접 복사해 주세요!', 'warn', 5000);
+            }
+            setVibeStep(2);
+        }
+
+        async function copyPromptOnly() {
+            const ok = await copyText(document.getElementById('vibePromptBox').value);
+            showToast(ok ? '프롬프트가 복사되었습니다! 이제 AI(Gemini/ChatGPT) 창에 붙여넣으세요!' : '복사에 실패했어요. Step 1의 [다시 수정하기]로 돌아가 직접 복사해 주세요.', ok ? 'success' : 'warn', 4000);
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] Step 2: AI 코드 정리 · 안전 검사 · 미리보기
+        // ------------------------------------------------------------
+
+        // AI가 실수로 붙인 ```html 표시나 <html>, <body> 껍데기를 벗겨내요
+        function cleanAiCode(raw) {
+            let code = raw.replace(/```[a-zA-Z]*/g, '');
+            code = code.replace(/<!DOCTYPE[^>]*>/gi, '');
+
+            // <head> 안의 <style>(디자인 규칙)은 살리고 나머지는 버려요
+            let headStyles = '';
+            const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+            if (headMatch) {
+                headStyles = (headMatch[1].match(/<style[\s\S]*?<\/style>/gi) || []).join('\n');
+                code = code.replace(headMatch[0], '');
+            }
+            // <body> 안쪽 내용만 꺼내요
+            const bodyMatch = code.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+            if (bodyMatch) code = bodyMatch[1];
+            code = code.replace(/<\/?html[^>]*>/gi, '').replace(/<\/?body[^>]*>/gi, '');
+            return (headStyles + '\n' + code).trim();
+        }
+
+        // 붙여넣은 코드에서 위험한 부분(스크립트, 자동 실행 속성 등)을 지워요
+        function sanitizeHtml(html) {
+            const tpl = document.createElement('template');
+            tpl.innerHTML = html;
+            tpl.content.querySelectorAll('script, iframe, object, embed, base, meta, form, frame, frameset').forEach(node => node.remove());
+            // 구글 폰트 같은 디자인용 링크만 남기고 나머지 <link>는 지워요
+            tpl.content.querySelectorAll('link').forEach(node => {
+                const href = (node.getAttribute('href') || '').trim();
+                if (!href.startsWith('https://fonts.googleapis.com/')) node.remove();
+            });
+            tpl.content.querySelectorAll('*').forEach(el => {
+                Array.from(el.attributes).forEach(attr => {
+                    const name = attr.name.toLowerCase();
+                    const value = attr.value.replace(/\s/g, '').toLowerCase();
+                    if (name.startsWith('on')) {
+                        el.removeAttribute(attr.name); // onclick, onerror 같은 자동 실행 속성 제거
+                    } else if (['href', 'src', 'xlink:href', 'action', 'formaction'].includes(name) && value.startsWith('javascript:')) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+            });
+            return tpl.innerHTML;
+        }
+
+        // 정리 + 안전 검사를 한 번에
+        function prepareAiHtml(raw) {
+            const cleaned = cleanAiCode(raw || '');
+            return cleaned ? sanitizeHtml(cleaned) : '';
+        }
+
+        // 코드를 붙여넣을 때마다 오른쪽 미리보기를 새로 그려요
+        function renderLiveCodePreview() {
+            const html = prepareAiHtml(document.getElementById('liveCodeEditor').value);
+            const container = document.getElementById('livePreviewContainer');
+            if (html) {
+                container.innerHTML = `<div class="absolute inset-0 overflow-hidden">${html}</div>`;
+            } else {
+                container.innerHTML = `
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 border-4 border-dashed border-slate-300 rounded-2xl text-slate-400">
+                        <i class="fa-solid fa-wand-magic-sparkles text-3xl mb-2"></i>
+                        <p class="text-sm font-bold">Step 2에서 코드를 붙여넣으면<br>여기에 짠! 하고 나타나요</p>
+                    </div>`;
+            }
+            // 코드가 있어야 Step 3로 넘어가는 버튼이 켜져요
+            document.getElementById('btnToStep3').disabled = !html;
+        }
+
+        function resetCodingTemplate() {
+            document.getElementById('liveCodeEditor').value = '';
+            renderLiveCodePreview();
+        }
+
+        function goToStep3() {
+            if (!prepareAiHtml(document.getElementById('liveCodeEditor').value)) {
+                showToast('먼저 AI가 만들어 준 코드를 붙여넣어 주세요!', 'warn');
+                return;
+            }
+            setVibeStep(3);
+        }
+
+        // ------------------------------------------------------------
+        // [바이브 코딩] Step 3: 완성 및 저장
+        // ------------------------------------------------------------
+        function saveCodingCard() {
+            const html = prepareAiHtml(document.getElementById('liveCodeEditor').value);
+            if (!html) {
+                showToast('저장할 코드가 없어요. Step 2에서 코드를 붙여넣어 주세요!', 'warn');
+                return;
+            }
+            const newCard = {
+                id: 'vibe_card_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                htmlContent: html,
+                ratio: vibeState.ratio,
+                bgClass: 'bg-white',
+                name: getInputValue('vibeName') || 'AI 바이브 명함',
+                mode: 'vibe'
+            };
+            cards.unshift(newCard);
+            saveCardsToStorage();
+            closeModal('codingStudioModal');
+            renderGrid();
+            openDoneModal(newCard);
+        }
+
+        // ------------------------------------------------------------
+        // [완성 모달] 저장 직후 축하 + QR/PC 저장 버튼
+        // ------------------------------------------------------------
+        function openDoneModal(card) {
+            doneCardId = card.id;
+            const preview = document.getElementById('donePreview');
+            preview.innerHTML = '';
+            preview.appendChild(buildCardFrame(card, 'done_frame'));
+            openModal('doneModal');
+        }
+
+        function openQrFromDone() {
+            // 완성 모달은 뒤에 그대로 두고(사진 찍기용) 그 위에 QR 모달을 띄워요
+            openQrModal(doneCardId, 'done_frame', true);
+        }
+
+        function downloadFromDone() {
+            const card = cards.find(c => c.id === doneCardId);
+            downloadCardAsImage('done_frame', makeFileName(card));
+        }
+
+        function closeDoneModal() {
+            closeModal('doneModal');
+            openPrivacyModal(doneCardId);
+        }
+
+        // ------------------------------------------------------------
+        // [QR 다운로드] 사진 만들기 → ImgBB 업로드(10분 뒤 자동 삭제) → QR 표시
+        // ------------------------------------------------------------
+        function showQrView(view) {
+            ['qrLoading', 'qrSuccess', 'qrFallback'].forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', id !== view);
+            });
+        }
+
+        async function openQrModal(cardId, elementId, fromDone) {
+            const card = cards.find(c => c.id === cardId);
+            const myToken = ++qrState.token; // 중간에 닫았다가 다시 열어도 꼬이지 않게 번호표 사용
+            clearInterval(qrState.timer);
+            qrState.cardId = cardId;
+            qrState.fromDone = !!fromDone;
+            qrState.dataUrl = '';
+            qrState.fileName = makeFileName(card);
+            document.getElementById('qrCodeBox').innerHTML = '';
+            document.getElementById('qrLoadingDetail').textContent = '명함을 사진으로 바꾸는 중이에요...';
+            showQrView('qrLoading');
+            openModal('qrModal');
+
+            // 1) 명함을 사진으로 바꾸기
+            let dataUrl;
+            try {
+                const canvas = await captureElement(elementId, 2);
+                dataUrl = canvas.toDataURL('image/png');
+            } catch (e) {
+                console.error(e);
+                if (myToken !== qrState.token) return;
+                closeModal('qrModal');
+                showToast('사진을 만드는 중에 문제가 생겼어요. 다시 시도해 주세요!', 'error');
+                return;
+            }
+            if (myToken !== qrState.token) return;
+            qrState.dataUrl = dataUrl;
+
+            // 2) 업로드할 수 있는 상황인지 확인
+            const key = getImgbbKey();
+            if (!key) return showQrFallback('부스 설정에 ImgBB 키가 아직 등록되지 않았어요. (선생님께 알려 주세요)');
+            if (!navigator.onLine) return showQrFallback('지금 인터넷에 연결되어 있지 않아요.');
+            if (typeof QRCode === 'undefined') return showQrFallback('QR코드 만들기 도구를 불러오지 못했어요.');
+
+            // 3) 업로드하고 QR 그리기
+            document.getElementById('qrLoadingDetail').textContent = '사진을 잠깐 인터넷에 올리는 중이에요... (10분 뒤 자동 삭제)';
+            try {
+                const url = await uploadToImgbb(dataUrl, key);
+                if (myToken !== qrState.token) return;
+                showQrSuccess(url);
+            } catch (e) {
+                console.error(e);
+                if (myToken !== qrState.token) return;
+                showQrFallback('사진 업로드에 실패했어요. (' + e.message + ')');
+            }
+        }
+
+        async function uploadToImgbb(dataUrl, key) {
+            const form = new FormData();
+            form.append('image', dataUrl.split(',')[1]);   // 'data:image/png;base64,' 뒷부분만 보내요
+            form.append('name', 'talk_vibe_' + Date.now()); // 파일 이름에 학생 이름을 넣지 않아요 (개인정보 보호)
+            const endpoint = 'https://api.imgbb.com/1/upload?expiration=' + QR_EXPIRE_SECONDS + '&key=' + encodeURIComponent(key);
+            const res = await fetch(endpoint, { method: 'POST', body: form });
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json || !json.success) {
+                const msg = (json && json.error && json.error.message) || ('서버 응답 ' + res.status);
+                throw new Error(msg);
+            }
+            return json.data.url;
+        }
+
+        function showQrSuccess(url) {
+            const box = document.getElementById('qrCodeBox');
+            box.innerHTML = '';
+            new QRCode(box, {
+                text: url,
+                width: 256,
+                height: 256,
+                colorDark: '#0f172a',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            showQrView('qrSuccess');
+            startQrCountdown();
+        }
+
+        // 10분 카운트다운 표시
+        function startQrCountdown() {
+            clearInterval(qrState.timer);
+            let remain = QR_EXPIRE_SECONDS;
+            // 지난번에 '시간이 지났어요'로 바뀐 문구를 처음 상태로 되돌려요
+            document.getElementById('qrCountdownText').innerHTML = '<i class="fa-regular fa-clock mr-1"></i>개인정보 보호를 위해 사진은 <span id="qrCountdown">10:00</span> 뒤 인터넷에서 자동으로 사라져요.';
+            // 1초마다 남은 시간을 줄여서 보여줘요
+            const run = () => {
+                const m = String(Math.floor(remain / 60)).padStart(2, '0');
+                const s = String(remain % 60).padStart(2, '0');
+                const el = document.getElementById('qrCountdown');
+                if (el) el.textContent = `${m}:${s}`;
+                if (remain <= 0) {
+                    clearInterval(qrState.timer);
+                    document.getElementById('qrCountdownText').innerHTML = '<i class="fa-regular fa-clock mr-1"></i>시간이 지나 사진이 사라졌어요. 다시 받으려면 QR 버튼을 한 번 더 눌러 주세요.';
+                }
+                remain--;
+            };
+            run();
+            qrState.timer = setInterval(run, 1000);
+        }
+
+        // QR을 만들 수 없을 때: 사진을 크게 보여주고 다른 방법을 안내해요
+        function showQrFallback(reason) {
+            document.getElementById('qrFallbackReason').textContent = reason;
+            document.getElementById('qrFallbackImg').src = qrState.dataUrl;
+            showQrView('qrFallback');
+        }
+
+        function downloadQrFallbackImage() {
+            if (!qrState.dataUrl) return;
+            downloadDataUrl(qrState.dataUrl, qrState.fileName);
+            showToast('💾 이미지를 PC에 저장했어요!', 'success');
+        }
+
+        // [닫기(완료)]를 누르면 바로 닫지 않고 '갤러리에 남길까요?' 화면으로 넘어가요
+        function finishQrModal() {
+            qrState.token++;          // 아직 진행 중인 업로드가 있으면 화면에 반영하지 않도록
+            clearInterval(qrState.timer);
+            closeModal('qrModal');
+            if (qrState.fromDone) closeModal('doneModal');
+            openPrivacyModal(qrState.cardId);
+        }
+
+        // ------------------------------------------------------------
+        // [개인정보 보호] 갤러리에 남길지, 지울지 선택
+        // ------------------------------------------------------------
+        function openPrivacyModal(cardId) {
+            if (!cardId || !cards.some(c => c.id === cardId)) return; // 이미 지워진 카드면 묻지 않아요
+            privacyCardId = cardId;
+            openModal('privacyModal');
+        }
+
+        function keepCardInGallery() {
+            closeModal('privacyModal');
+            showToast('🌟 갤러리에 멋지게 전시했어요! 친구들이 구경할 거예요.', 'success');
+            privacyCardId = null;
+        }
+
+        function deleteCardForPrivacy() {
+            if (privacyCardId) removeCardById(privacyCardId);
+            closeModal('privacyModal');
+            showToast('🔒 내 정보를 갤러리와 이 PC에서 깨끗하게 지웠어요.', 'info');
+            privacyCardId = null;
+        }
+
+        // ------------------------------------------------------------
+        // [부스 설정] ImgBB 키는 이 PC 브라우저에만 저장해요
+        // ------------------------------------------------------------
+        function getImgbbKey() {
+            try {
+                return (localStorage.getItem(IMGBB_KEY_STORAGE) || '').trim();
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function openSettingsModal() {
+            const key = getImgbbKey();
+            const input = document.getElementById('imgbbKeyInput');
+            input.value = key;
+            input.type = 'password';
+            document.getElementById('keyEyeIcon').className = 'fa-solid fa-eye';
+            updateKeyStatus();
+            openModal('settingsModal');
+        }
+        function closeSettingsModal() {
+            closeModal('settingsModal');
+        }
+
+        function updateKeyStatus() {
+            const status = document.getElementById('imgbbKeyStatus');
+            if (getImgbbKey()) {
+                status.className = 'text-xs mt-1.5 text-emerald-600 font-bold';
+                status.textContent = '✅ 키가 저장되어 있어요. QR 다운로드를 사용할 수 있어요.';
+            } else {
+                status.className = 'text-xs mt-1.5 text-slate-500';
+                status.textContent = '아직 키가 없어요. 키가 없으면 QR 대신 사진 보기/PC 저장으로 안내돼요.';
+            }
+        }
+
+        function toggleKeyVisible() {
+            const input = document.getElementById('imgbbKeyInput');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            document.getElementById('keyEyeIcon').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        }
+
+        function saveImgbbKey() {
+            const key = document.getElementById('imgbbKeyInput').value.trim();
+            if (!key) {
+                showToast('API 키를 입력해 주세요!', 'warn');
+                return;
+            }
+            try {
+                localStorage.setItem(IMGBB_KEY_STORAGE, key);
+                updateKeyStatus();
+                showToast('부스 설정을 저장했어요!', 'success');
+                closeSettingsModal();
+            } catch (e) {
+                showToast('키를 저장하지 못했어요. 브라우저 설정을 확인해 주세요.', 'error');
+            }
+        }
+
+        function removeImgbbKey() {
+            if (!confirm('저장된 ImgBB 키를 지울까요?')) return;
+            try { localStorage.removeItem(IMGBB_KEY_STORAGE); } catch (e) { /* 무시 */ }
+            document.getElementById('imgbbKeyInput').value = '';
+            updateKeyStatus();
+            showToast('키를 지웠어요.', 'info');
+        }
+
+        // ------------------------------------------------------------
+        // [보안 도구] 글자 속 특수기호를 안전하게 바꿔요 (해킹 코드 방지)
+        // ------------------------------------------------------------
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g,
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
