@@ -197,51 +197,15 @@
     </header>
 
     <!-- ===================== 메인 화면 =====================
-         PC(넓은 화면): 왼쪽 = 부스 갤러리 / 오른쪽 위 = 텍스트 예시 / 오른쪽 아래 = 바이브 코딩 예시
-         휴대폰·태블릿: 예시(텍스트 → 바이브) → 갤러리 순서로 위에서 아래로 -->
+         PC(넓은 화면): 왼쪽(기본 60%) = 위 텍스트 예시 / 아래 바이브 코딩 예시
+                        오른쪽(기본 40%) = 부스 갤러리
+                        가운데 손잡이를 끌면 좌우 폭을 마음대로 바꿀 수 있어요 (두 번 클릭하면 6:4로 돌아가요)
+         휴대폰·태블릿: 텍스트 예시 → 바이브 예시 → 갤러리 순서로 위에서 아래로 -->
     <main class="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden bg-white">
-        <div class="lg:h-full max-w-[1680px] mx-auto flex flex-col lg:flex-row">
+        <div id="mainSplit" class="lg:h-full flex flex-col lg:flex-row" style="--split:60%">
 
-            <!-- 왼쪽: 부스 갤러리 (학생 작품) -->
-            <section class="order-2 lg:order-1 flex-1 min-w-0 lg:overflow-y-auto px-4 sm:px-6 py-5">
-                <div class="flex items-center gap-2 mb-4">
-                    <h2 class="text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-images text-brand-pink mr-1.5"></i>부스 갤러리</h2>
-                    <span id="galleryCount" class="h-5 min-w-[20px] px-1.5 rounded-full bg-brand-pink text-white text-xs leading-5 text-center">0</span>
-                    <span class="text-sm text-ink-3 hidden sm:inline">친구들이 만든 작품을 구경해 보세요!</span>
-                </div>
-                <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-5 items-start"></div>
-
-                <!-- 아직 작품이 없을 때: 빈 공간 대신 '체험 방법 3단계' 안내를 보여줘요 -->
-                <div id="emptyState" class="hidden rounded-xl border-2 border-dashed border-line px-5 py-8 sm:px-10 sm:py-10 text-center">
-                    <p class="text-4xl mb-2">🖼️</p>
-                    <h3 class="text-lg sm:text-xl font-medium text-ink mb-1">아직 전시된 작품이 없어요</h3>
-                    <p class="text-sm text-ink-3">첫 번째 작품의 주인공이 되어 보세요! 완성한 작품은 여기에 전시돼요.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-6 text-left">
-                        <div class="bg-surface rounded-lg p-4">
-                            <p class="text-2xl mb-1">👆</p>
-                            <p class="text-sm font-medium text-ink">1. 고르기</p>
-                            <p class="text-xs text-ink-2 mt-0.5">오른쪽 예시를 고르거나 새로 만들기 버튼을 눌러요</p>
-                        </div>
-                        <div class="bg-surface rounded-lg p-4">
-                            <p class="text-2xl mb-1">✏️</p>
-                            <p class="text-sm font-medium text-ink">2. 만들기</p>
-                            <p class="text-xs text-ink-2 mt-0.5">글자·폰트·색을 고르거나 AI와 바이브 코딩해요</p>
-                        </div>
-                        <div class="bg-surface rounded-lg p-4">
-                            <p class="text-2xl mb-1">📱</p>
-                            <p class="text-sm font-medium text-ink">3. 가져가기</p>
-                            <p class="text-xs text-ink-2 mt-0.5">QR코드를 찍어 내 폰에 저장해요</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row justify-center gap-2">
-                        <button onclick="openCreateModal()" class="h-11 px-5 rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white font-medium whitespace-nowrap transition"><i class="fa-solid fa-plus mr-1.5"></i>일반 모드로 만들기</button>
-                        <button onclick="openCodingStudioModal()" class="h-11 px-5 rounded-lg bg-brand-pink hover:bg-brand-pink-400 text-white font-medium whitespace-nowrap transition">✨ 바이브 코딩으로 만들기</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 오른쪽: 예시 작품 (위 = 텍스트, 아래 = 바이브 코딩) -->
-            <aside class="order-1 lg:order-2 lg:w-[540px] xl:w-[600px] shrink-0 flex flex-col lg:overflow-y-auto lg:border-l border-line lg:bg-surface/50">
+            <!-- 왼쪽: 예시 작품 (위 = 텍스트, 아래 = 바이브 코딩) -->
+            <div class="w-full lg:w-[var(--split)] lg:shrink-0 min-w-0 flex flex-col lg:overflow-y-auto">
                 <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-5 pb-3">
                     <div class="flex items-center justify-between gap-2 mb-3">
                         <div class="min-w-0">
@@ -253,7 +217,7 @@
                             <button onclick="scrollExamples('text', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                         </div>
                     </div>
-                    <div id="exampleRowText" class="flex gap-4 overflow-x-auto pb-2 snap-x"></div>
+                    <div id="exampleRowText" class="shrink-0 flex gap-4 overflow-x-auto pb-2 snap-x"></div>
                 </section>
                 <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-4 pb-4 border-t border-line-light">
                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -266,9 +230,52 @@
                             <button onclick="scrollExamples('vibe', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                         </div>
                     </div>
-                    <div id="exampleRowVibe" class="flex gap-4 overflow-x-auto pb-2 snap-x"></div>
+                    <div id="exampleRowVibe" class="shrink-0 flex gap-4 overflow-x-auto pb-2 snap-x"></div>
                 </section>
-            </aside>
+            </div>
+
+            <!-- 가운데 손잡이: 끌어서 좌우 폭 조절 (PC에서만 보여요) -->
+            <div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="좌우 폭 조절" aria-valuemin="35" aria-valuemax="75" aria-valuenow="60" tabindex="0"
+                 title="끌어서 폭을 바꿔요 · 두 번 클릭하면 6:4로 돌아가요"
+                 class="hidden lg:flex w-3 shrink-0 cursor-col-resize items-center justify-center bg-white border-l border-line hover:bg-brand-blue-100 focus:bg-brand-blue-100 focus:outline-none group transition-colors">
+                <span class="w-1 h-10 rounded-full bg-line-bold group-hover:bg-brand-blue transition-colors"></span>
+            </div>
+
+            <!-- 오른쪽: 부스 갤러리 (학생 작품) -->
+            <section class="flex-1 min-w-0 lg:overflow-y-auto px-4 sm:px-6 py-5 border-t lg:border-t-0 border-line-light lg:bg-surface/60">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-images text-brand-pink mr-1.5"></i>부스 갤러리</h2>
+                    <span id="galleryCount" class="h-5 min-w-[20px] px-1.5 rounded-full bg-brand-pink text-white text-xs leading-5 text-center">0</span>
+                    <span class="text-xs text-ink-3 truncate">친구들의 작품을 구경해 보세요!</span>
+                </div>
+                <!-- 작품 카드를 예시와 같은 크기(220px)로 칸에 맞춰 여러 줄로 놓아요 -->
+                <div id="cardGrid" class="grid grid-cols-[repeat(auto-fill,220px)] justify-center sm:justify-start gap-4 items-start"></div>
+
+                <!-- 아직 작품이 없을 때: 빈 공간 대신 '체험 방법 3단계' 안내를 보여줘요 -->
+                <div id="emptyState" class="hidden rounded-xl border-2 border-dashed border-line bg-white px-5 py-7 text-center">
+                    <p class="text-4xl mb-2">🖼️</p>
+                    <h3 class="text-lg font-medium text-ink mb-1">아직 전시된 작품이 없어요</h3>
+                    <p class="text-sm text-ink-3">첫 번째 작품의 주인공이 되어 보세요!<br>완성한 작품은 여기에 전시돼요.</p>
+                    <div class="flex flex-col gap-2 my-5 text-left max-w-sm mx-auto">
+                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                            <span class="text-2xl shrink-0">👆</span>
+                            <span class="min-w-0"><b class="block text-sm font-medium text-ink">1. 고르기</b><span class="block text-xs text-ink-2">왼쪽 예시를 고르거나 새로 만들기를 눌러요</span></span>
+                        </div>
+                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                            <span class="text-2xl shrink-0">✏️</span>
+                            <span class="min-w-0"><b class="block text-sm font-medium text-ink">2. 만들기</b><span class="block text-xs text-ink-2">글자·폰트·색을 고르거나 AI와 바이브 코딩해요</span></span>
+                        </div>
+                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                            <span class="text-2xl shrink-0">📱</span>
+                            <span class="min-w-0"><b class="block text-sm font-medium text-ink">3. 가져가기</b><span class="block text-xs text-ink-2">QR코드를 찍어 내 폰에 저장해요</span></span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="openCreateModal()" class="h-10 px-4 rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white text-sm font-medium whitespace-nowrap transition"><i class="fa-solid fa-plus mr-1.5"></i>일반 모드</button>
+                        <button onclick="openCodingStudioModal()" class="h-10 px-4 rounded-lg bg-brand-pink hover:bg-brand-pink-400 text-white text-sm font-medium whitespace-nowrap transition">✨ 바이브 코딩</button>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -1041,7 +1048,69 @@
             loadCardsFromStorage();
             renderExamples();
             startDanmaku();
+            setupSplitHandle();
         });
+
+        // ------------------------------------------------------------
+        // [메인 화면 좌우 폭 조절] 가운데 손잡이를 끌어서 왼쪽(예시) : 오른쪽(갤러리) 비율을 바꿔요
+        //  - 기본 6:4, 왼쪽은 35% ~ 75% 사이에서만 움직여요
+        //  - 두 번 클릭하면 6:4로 돌아가고, 키보드 ← → 로도 조절할 수 있어요
+        //  - 정한 비율은 이 PC 브라우저에 기억돼요
+        // ------------------------------------------------------------
+        const SPLIT_STORAGE = 'talk_vibe_split';
+        const SPLIT_DEFAULT = 60, SPLIT_MIN = 35, SPLIT_MAX = 75;
+
+        function setSplit(percent, save) {
+            const value = Math.round(Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, percent)) * 10) / 10;
+            document.getElementById('mainSplit').style.setProperty('--split', value + '%');
+            document.getElementById('splitHandle').setAttribute('aria-valuenow', value);
+            if (save) {
+                try { localStorage.setItem(SPLIT_STORAGE, String(value)); } catch (e) { /* 저장이 안 돼도 화면은 그대로 써요 */ }
+            }
+        }
+
+        function setupSplitHandle() {
+            const handle = document.getElementById('splitHandle');
+            const container = document.getElementById('mainSplit');
+            let saved = NaN;
+            try { saved = parseFloat(localStorage.getItem(SPLIT_STORAGE)); } catch (e) { /* 무시 */ }
+            setSplit(isNaN(saved) ? SPLIT_DEFAULT : saved, false);
+
+            // 마우스(또는 터치펜)로 끌기
+            handle.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                handle.setPointerCapture(e.pointerId);
+                document.body.style.cursor = 'col-resize';
+                const move = (ev) => {
+                    const rect = container.getBoundingClientRect();
+                    setSplit(((ev.clientX - rect.left) / rect.width) * 100, false);
+                };
+                const up = (ev) => {
+                    handle.releasePointerCapture(ev.pointerId);
+                    handle.removeEventListener('pointermove', move);
+                    handle.removeEventListener('pointerup', up);
+                    document.body.style.cursor = '';
+                    move(ev);
+                    setSplit(parseFloat(container.style.getPropertyValue('--split')), true);
+                };
+                handle.addEventListener('pointermove', move);
+                handle.addEventListener('pointerup', up);
+            });
+
+            // 두 번 클릭하면 기본 6:4로
+            handle.addEventListener('dblclick', () => {
+                setSplit(SPLIT_DEFAULT, true);
+                showToast('화면 비율을 6:4로 되돌렸어요', 'info', 2000);
+            });
+
+            // 키보드 ← → 로 5%씩 조절
+            handle.addEventListener('keydown', (e) => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                e.preventDefault();
+                const now = parseFloat(container.style.getPropertyValue('--split')) || SPLIT_DEFAULT;
+                setSplit(now + (e.key === 'ArrowRight' ? 5 : -5), true);
+            });
+        }
 
         // 글꼴이 늦게 도착해도 명함 크기를 한 번 더 맞춰요
         if (document.fonts && document.fonts.ready) {
@@ -1292,27 +1361,35 @@
 
             // 명함 무대: 정해진 높이 안에 명함이 쏙 들어가게
             const stage = document.createElement('div');
-            stage.className = 'h-[176px] bg-surface lg:bg-white rounded-xl border border-line-light flex items-center justify-center';
+            stage.className = 'h-[176px] shrink-0 bg-surface rounded-xl border border-line-light flex items-center justify-center'; // shrink-0: 화면 높이가 좁아도 무대가 찌그러지지 않게
             const frame = buildCardFrame(exampleToCard(ex), 'shot_' + ex.id);
             frame.style.width = frameWidthFor(ex.ratio, 196, 152) + 'px';
             stage.appendChild(frame);
 
-            // 이름 + 규격 · 테마(또는 폰트)
+            // 명함 그림을 눌러도 바로 시작할 수 있어요
+            stage.classList.add('cursor-pointer', 'hover:border-brand-pink-300', 'transition');
+            stage.title = '눌러서 이 예시로 만들어 보기';
+            stage.onclick = () => startFromExample(ex.id);
+
+            // 이름 + 규격 · 테마(또는 폰트) + 오른쪽에 작은 [만들어 보기] 버튼
             const themeName = ex.mode === 'vibe' ? PROMPT_THEMES[ex.theme].name.replace(/^[①-⑤]\s*/, '') : getFont(ex.font).label;
             const info = document.createElement('div');
-            info.className = 'mt-2 px-0.5 min-w-0';
+            info.className = 'mt-2 px-0.5 flex items-center justify-between gap-2';
             info.innerHTML = `
-                <p class="text-[15px] font-medium text-ink truncate">${escapeHtml(ex.name)}</p>
-                <p class="text-xs text-ink-3 truncate"><i class="fa-solid ${ratio.icon} mr-1"></i>${ratio.short} · ${escapeHtml(themeName)}</p>`;
+                <div class="min-w-0">
+                    <p class="text-[15px] font-medium text-ink truncate">${escapeHtml(ex.name)}</p>
+                    <p class="text-xs text-ink-3 truncate"><i class="fa-solid ${ratio.icon} mr-1"></i>${ratio.short} · ${escapeHtml(themeName)}</p>
+                </div>`;
 
             const btn = document.createElement('button');
-            btn.className = 'mt-2 w-full h-9 rounded-lg bg-surface lg:bg-white border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-medium whitespace-nowrap transition';
-            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-brand-pink"></i>이걸로 만들어 보기';
+            btn.className = 'shrink-0 h-8 px-2.5 rounded-md bg-brand-pink-50 border border-brand-pink-200 text-brand-pink-600 hover:bg-brand-pink-100 text-xs font-medium whitespace-nowrap transition';
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i>만들어 보기';
+            btn.title = '이 예시로 만들어 보기';
             btn.onclick = () => startFromExample(ex.id);
+            info.appendChild(btn);
 
             item.appendChild(stage);
             item.appendChild(info);
-            item.appendChild(btn);
             return item;
         }
 
@@ -1349,39 +1426,41 @@
             cards.forEach((card) => {
                 const ratio = getRatio(card.ratio);
                 const item = document.createElement('div');
-                item.className = 'flex flex-col min-w-0';
+                item.className = 'w-[220px] flex flex-col';
 
-                // 명함 무대 (옅은 회색 판 위에 명함을 올려요)
+                // 명함 무대: 예시 작품과 똑같은 크기(220 × 176)에 쏙 들어가게
                 const stage = document.createElement('div');
-                stage.className = 'bg-surface rounded-xl p-4 flex items-center justify-center';
-                stage.appendChild(buildCardFrame(card, card.id));
+                stage.className = 'h-[176px] shrink-0 bg-white rounded-xl border border-line-light flex items-center justify-center';
+                const frame = buildCardFrame(card, card.id);
+                frame.style.width = frameWidthFor(card.ratio, 196, 152) + 'px';
+                stage.appendChild(frame);
 
                 // 이름과 규격
                 const info = document.createElement('div');
-                info.className = 'mt-2.5 px-0.5 flex items-center justify-between gap-2';
+                info.className = 'mt-2 px-0.5 flex items-center justify-between gap-2';
                 info.innerHTML = `
                     <p class="text-[15px] font-medium text-ink truncate">${escapeHtml(card.name || '이름 없음')}</p>
                     <span class="shrink-0 text-xs text-ink-3 whitespace-nowrap"><i class="fa-solid ${ratio.icon} mr-1"></i>${ratio.short}</span>`;
 
                 // 버튼: QR 받기(넓게) / PC 저장 / 삭제
                 const actions = document.createElement('div');
-                actions.className = 'mt-2 flex flex-col gap-2';
+                actions.className = 'mt-2 flex flex-col gap-1.5';
 
                 const qrBtn = document.createElement('button');
-                qrBtn.className = 'w-full h-10 rounded-lg bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-sm font-medium whitespace-nowrap transition';
+                qrBtn.className = 'w-full h-9 rounded-lg bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-sm font-medium whitespace-nowrap transition';
                 qrBtn.textContent = '📱 QR코드로 내 폰에 받기';
                 qrBtn.onclick = () => openQrModal(card.id, card.id, false);
 
                 const row = document.createElement('div');
-                row.className = 'grid grid-cols-[1fr_auto] gap-2';
+                row.className = 'grid grid-cols-[1fr_auto] gap-1.5';
 
                 const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'h-10 rounded-lg bg-surface border border-line-light text-ink-2 hover:bg-line text-sm font-medium whitespace-nowrap transition';
+                downloadBtn.className = 'h-9 rounded-lg bg-white border border-line-light text-ink-2 hover:bg-line text-sm font-medium whitespace-nowrap transition';
                 downloadBtn.textContent = '💾 PC에 이미지 저장';
                 downloadBtn.onclick = () => downloadCardAsImage(card.id, makeFileName(card));
 
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'w-10 h-10 rounded-lg bg-surface border border-line-light text-state-red hover:bg-state-red-bg transition';
+                deleteBtn.className = 'w-9 h-9 rounded-lg bg-white border border-line-light text-state-red hover:bg-state-red-bg transition';
                 deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
                 deleteBtn.title = '명함 삭제';
                 deleteBtn.onclick = () => deleteCard(card.id);
