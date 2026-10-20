@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>톡톡(Talk) 바이브 명함소</title>
+    <!-- 브라우저 탭에 보이는 작은 아이콘: 우리 학교 교표 -->
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <!-- Tailwind CSS (디자인 도구) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -125,6 +127,9 @@
         /* 바이브 코딩 단계 박스가 부드럽게 밝아지고 흐려지게 */
         .vibe-step { transition: opacity 0.3s, box-shadow 0.3s, background-color 0.3s, border-color 0.3s; }
 
+        /* 접었다 펴는 상자(details)의 기본 화살표 숨기기 (직접 만든 화살표를 써요) */
+        summary::-webkit-details-marker { display: none; }
+
         /* 말풍선 꼬리 */
         .speech-bubble { position: relative; }
         .speech-bubble::after {
@@ -154,8 +159,9 @@
         <div class="relative px-4 sm:px-6 pt-4 pb-3 flex flex-col lg:flex-row lg:items-center gap-3">
             <!-- 제목 줄 -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-11 h-11 shrink-0 rounded-lg bg-white text-brand-pink flex items-center justify-center text-xl shadow-float">
-                    <i class="fa-solid fa-comments"></i>
+                <!-- 우리 학교 교표 -->
+                <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white p-0.5 shadow-float flex items-center justify-center">
+                    <img src="assets/school-emblem.png" alt="금정 교표" class="w-full h-full object-contain">
                 </div>
                 <div class="min-w-0 flex-1">
                     <h1 class="text-xl sm:text-2xl font-medium text-ink leading-tight">톡톡(Talk) 바이브 명함소</h1>
@@ -190,36 +196,79 @@
         <div id="danmakuLane" aria-hidden="true" class="relative h-8 sm:h-10 pointer-events-none"></div>
     </header>
 
-    <!-- ===================== 메인 화면: 예시 작품 + 부스 갤러리 ===================== -->
-    <main class="flex-1 overflow-y-auto bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+    <!-- ===================== 메인 화면 =====================
+         PC(넓은 화면): 왼쪽 = 부스 갤러리 / 오른쪽 위 = 텍스트 예시 / 오른쪽 아래 = 바이브 코딩 예시
+         휴대폰·태블릿: 예시(텍스트 → 바이브) → 갤러리 순서로 위에서 아래로 -->
+    <main class="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden bg-white">
+        <div class="lg:h-full max-w-[1680px] mx-auto flex flex-col lg:flex-row">
 
-            <!-- 예시 작품 코너 -->
-            <section class="mb-8">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <h2 class="text-lg font-medium text-ink whitespace-nowrap">예시 작품</h2>
-                        <span class="text-sm text-ink-3 hidden sm:inline">마음에 드는 예시로 바로 시작해 보세요! 옆으로 넘겨서 더 볼 수 있어요 →</span>
-                    </div>
-                    <div id="exampleTabs" class="flex gap-1.5"></div>
+            <!-- 왼쪽: 부스 갤러리 (학생 작품) -->
+            <section class="order-2 lg:order-1 flex-1 min-w-0 lg:overflow-y-auto px-4 sm:px-6 py-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-images text-brand-pink mr-1.5"></i>부스 갤러리</h2>
+                    <span id="galleryCount" class="h-5 min-w-[20px] px-1.5 rounded-full bg-brand-pink text-white text-xs leading-5 text-center">0</span>
+                    <span class="text-sm text-ink-3 hidden sm:inline">친구들이 만든 작품을 구경해 보세요!</span>
                 </div>
-                <div id="exampleRow" class="flex gap-4 overflow-x-auto pb-3 snap-x"></div>
+                <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-5 items-start"></div>
+
+                <!-- 아직 작품이 없을 때: 빈 공간 대신 '체험 방법 3단계' 안내를 보여줘요 -->
+                <div id="emptyState" class="hidden rounded-xl border-2 border-dashed border-line px-5 py-8 sm:px-10 sm:py-10 text-center">
+                    <p class="text-4xl mb-2">🖼️</p>
+                    <h3 class="text-lg sm:text-xl font-medium text-ink mb-1">아직 전시된 작품이 없어요</h3>
+                    <p class="text-sm text-ink-3">첫 번째 작품의 주인공이 되어 보세요! 완성한 작품은 여기에 전시돼요.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-6 text-left">
+                        <div class="bg-surface rounded-lg p-4">
+                            <p class="text-2xl mb-1">👆</p>
+                            <p class="text-sm font-medium text-ink">1. 고르기</p>
+                            <p class="text-xs text-ink-2 mt-0.5">오른쪽 예시를 고르거나 새로 만들기 버튼을 눌러요</p>
+                        </div>
+                        <div class="bg-surface rounded-lg p-4">
+                            <p class="text-2xl mb-1">✏️</p>
+                            <p class="text-sm font-medium text-ink">2. 만들기</p>
+                            <p class="text-xs text-ink-2 mt-0.5">글자·폰트·색을 고르거나 AI와 바이브 코딩해요</p>
+                        </div>
+                        <div class="bg-surface rounded-lg p-4">
+                            <p class="text-2xl mb-1">📱</p>
+                            <p class="text-sm font-medium text-ink">3. 가져가기</p>
+                            <p class="text-xs text-ink-2 mt-0.5">QR코드를 찍어 내 폰에 저장해요</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-center gap-2">
+                        <button onclick="openCreateModal()" class="h-11 px-5 rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white font-medium whitespace-nowrap transition"><i class="fa-solid fa-plus mr-1.5"></i>일반 모드로 만들기</button>
+                        <button onclick="openCodingStudioModal()" class="h-11 px-5 rounded-lg bg-brand-pink hover:bg-brand-pink-400 text-white font-medium whitespace-nowrap transition">✨ 바이브 코딩으로 만들기</button>
+                    </div>
+                </div>
             </section>
 
-            <!-- 부스 갤러리 (학생 작품) -->
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-lg font-medium text-ink whitespace-nowrap">부스 갤러리</h2>
-                <span id="galleryCount" class="h-5 min-w-[20px] px-1.5 rounded-full bg-brand-pink text-white text-xs leading-5 text-center">0</span>
-                <span class="text-sm text-ink-3 hidden sm:inline">친구들이 만든 작품을 구경해 보세요!</span>
-            </div>
-            <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start"></div>
-            <div id="emptyState" class="hidden flex flex-col items-center justify-center text-center py-16">
-                <div class="w-20 h-20 bg-surface text-ink-4 rounded-full flex items-center justify-center text-3xl mb-4">
-                    <i class="fa-solid fa-address-card"></i>
-                </div>
-                <h3 class="text-lg font-medium text-ink mb-1">아직 만들어진 명함이 없어요!</h3>
-                <p class="text-sm text-ink-3">위쪽의 [일반 모드로 만들기] 또는 [바이브 코딩으로 만들기] 버튼을 눌러 첫 작품을 만들어보세요.</p>
-            </div>
+            <!-- 오른쪽: 예시 작품 (위 = 텍스트, 아래 = 바이브 코딩) -->
+            <aside class="order-1 lg:order-2 lg:w-[540px] xl:w-[600px] shrink-0 flex flex-col lg:overflow-y-auto lg:border-l border-line lg:bg-surface/50">
+                <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-5 pb-3">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="min-w-0">
+                            <h2 class="text-base sm:text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-font text-brand-blue mr-1.5"></i>텍스트 예시</h2>
+                            <p class="text-xs text-ink-3 truncate">글자·폰트·색만 골라서 쉽게 만들어요</p>
+                        </div>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button onclick="scrollExamples('text', -1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button onclick="scrollExamples('text', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div id="exampleRowText" class="flex gap-4 overflow-x-auto pb-2 snap-x"></div>
+                </section>
+                <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-4 pb-4 border-t border-line-light">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="min-w-0">
+                            <h2 class="text-base sm:text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-wand-magic-sparkles text-brand-pink mr-1.5"></i>바이브 코딩 예시</h2>
+                            <p class="text-xs text-ink-3 truncate">코드가 미리 채워져 있어서 AI 없이도 바로 체험!</p>
+                        </div>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button onclick="scrollExamples('vibe', -1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button onclick="scrollExamples('vibe', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div id="exampleRowVibe" class="flex gap-4 overflow-x-auto pb-2 snap-x"></div>
+                </section>
+            </aside>
         </div>
     </main>
 
@@ -357,34 +406,78 @@
                     </div>
 
                     <div class="space-y-5">
+                        <!-- 고르기 어려우면 랜덤으로! -->
+                        <button onclick="randomizeVibe()" class="w-full h-10 rounded-lg bg-surface border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-medium whitespace-nowrap transition">🎲 고르기 어렵다면? 랜덤으로 섞어 보기</button>
                         <div>
                             <p class="text-sm font-medium text-ink mb-2">① 결과물 규격(비율)</p>
                             <div id="vibeRatioChipsStep1" class="flex flex-wrap gap-2"></div>
+                            <p id="vibeRatioTip" class="text-xs text-ink-3 mt-2"></p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-ink mb-2">② 디자인 테마 고르기</p>
                             <div id="vibeThemeList" class="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-5 gap-2"></div>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-ink mb-2">③ 나의 핵심 아이콘/테마</p>
+                            <p class="text-sm font-medium text-ink mb-2">③ 구성 고르기 <span class="text-xs font-normal text-ink-3">(고른 규격에 맞는 구성만 나와요)</span></p>
+                            <div id="vibeLayoutChips" class="flex flex-wrap gap-2"></div>
+                            <input type="text" id="vibeLayoutCustom" oninput="updatePrompt()" placeholder="예: 신문 1면 기사처럼, 영화 포스터처럼" class="hidden mt-2 w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-ink mb-2">④ 나의 핵심 아이콘/테마</p>
                             <div id="vibeIconChips" class="flex flex-wrap gap-2"></div>
                             <input type="text" id="vibeIconCustom" oninput="updatePrompt()" placeholder="예: 고양이와 책, 축구공 등" class="hidden mt-2 w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-ink mb-2">④ 분위기/성격 키워드</p>
+                            <p class="text-sm font-medium text-ink mb-2">⑤ 분위기/성격 키워드</p>
                             <div id="vibeMoodChips" class="flex flex-wrap gap-2"></div>
                             <input type="text" id="vibeMoodCustom" oninput="updatePrompt()" placeholder="예: 따뜻한, 엉뚱한, 반짝이는" class="hidden mt-2 w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-ink mb-2">⑤ 기본 정보 입력</p>
+                            <p class="text-sm font-medium text-ink mb-2">⑥ 기본 정보 입력</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <input type="text" id="vibeName" oninput="updatePrompt()" placeholder="이름 / 닉네임 (예: 김바이브)" class="w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
                                 <input type="text" id="vibeRole" oninput="updatePrompt()" placeholder="역할 / 꿈 (예: 미래의 게임 개발자)" class="w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
                                 <input type="text" id="vibeBio" oninput="updatePrompt()" placeholder="한 줄 소개 (예: 상상을 코드로 만드는 중!)" class="sm:col-span-2 w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
                             </div>
                         </div>
+                        <!-- ⑦ 더 개성 있게 (선택) -->
+                        <details open class="rounded-lg border border-line bg-white group">
+                            <summary class="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-2">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-medium text-ink">⑦ ✨ 더 개성 있게 꾸미기</span>
+                                    <span class="block text-xs text-ink-3">선택 사항이에요. 안 골라도 괜찮아요!</span>
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-xs text-ink-3 transition group-open:rotate-180"></i>
+                            </summary>
+                            <div class="px-4 pb-4 space-y-4">
+                                <div>
+                                    <p class="text-xs font-medium text-ink-2 mb-1.5">🎨 색 조합</p>
+                                    <div id="vibePaletteChips" class="flex flex-wrap gap-2"></div>
+                                    <input type="text" id="vibePaletteCustom" oninput="updatePrompt()" placeholder="예: 민트와 진한 남색, 우리 학교 색(초록·노랑·빨강)" class="hidden mt-2 w-full h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-ink-2 mb-1.5">🔤 이름 글꼴 <span class="font-normal text-ink-3">(사이트에 이미 들어 있는 글꼴이라 AI 코드에서 바로 써져요)</span></p>
+                                    <div id="vibeFontChips" class="flex flex-wrap gap-2"></div>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-ink-2 mb-1.5">🙋 나를 드러내는 정보 <span class="font-normal text-ink-3">(최대 4개 · 고르면 입력칸이 생겨요)</span></p>
+                                    <div id="vibeExtraChips" class="flex flex-wrap gap-2"></div>
+                                    <div id="vibeExtraInputs" class="mt-2 space-y-2"></div>
+                                    <p class="text-[11px] text-ink-3 mt-1.5">🔒 실명 대신 닉네임도 좋아요. 학교·반·전화번호·주소 같은 개인정보는 넣지 마세요.</p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- ⑧ 기타: AI에게 추가로 부탁하기 -->
                         <div>
-                            <p class="text-sm font-medium text-ink mb-2">⑥ 최종 프롬프트 미리보기 <span class="text-xs font-normal text-ink-3">(직접 고쳐도 돼요!)</span></p>
+                            <p class="text-sm font-medium text-ink mb-1">⑧ 기타 · AI에게 추가로 부탁하기 <span class="text-xs font-normal text-ink-3">(선택)</span></p>
+                            <p class="text-xs text-ink-3 mb-2">아래 예시를 누르면 칸에 추가돼요. 원하는 말을 직접 써도 좋아요!</p>
+                            <div id="vibeRequestChips" class="flex flex-wrap gap-1.5 mb-2"></div>
+                            <textarea id="vibeExtraRequest" oninput="updatePrompt()" rows="2" placeholder="예: 내 이름 옆에 왕관을 씌워 줘, 배경에 체크무늬를 깔아 줘" class="w-full bg-surface text-ink text-sm p-3 rounded-md border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none leading-relaxed"></textarea>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-ink mb-2">⑨ 최종 프롬프트 미리보기 <span class="text-xs font-normal text-ink-3">(직접 고쳐도 돼요!)</span></p>
                             <!-- 학생이 직접 고쳤을 때 나오는 안내 -->
                             <div id="promptLockNotice" class="hidden mb-2 text-xs bg-state-orange-bg text-state-orange rounded-md px-3 py-2 flex flex-wrap items-center justify-between gap-2">
                                 <span>✋ 프롬프트를 직접 고쳐서 자동 조립을 잠시 멈췄어요.</span>
@@ -709,6 +802,93 @@
             { key: 'custom', label: '기타(직접쓰기)', text: '' }
         ];
 
+        // [바이브 코딩] 규격별 활용 팁 (프롬프트에도 들어가요)
+        const VIBE_RATIO_TIPS = {
+            card:   '명함은 주고받는 용도라서 이름과 역할이 한눈에 보여야 해. 글자는 너무 많지 않게, 정보는 깔끔하게 정리해 줘.',
+            square: '카톡·인스타 프로필은 작은 동그라미 모양으로 잘려 보이기도 하니까, 핵심 그림과 이름은 가운데에 크게 두고 네 모서리에는 중요한 글자를 두지 마.',
+            story:  '스토리·배경화면은 세로로 길고, 휴대폰의 시계·버튼이 위쪽과 아래쪽에 겹쳐. 중요한 글자는 가운데 쪽에 두고 위·아래 끝은 장식 위주로 꾸며 줘.'
+        };
+
+        // [바이브 코딩] 규격마다 다른 '구성(레이아웃)' 선택지
+        const VIBE_LAYOUTS = {
+            card: [
+                { key: 'classic', label: '🪪 클래식 명함',     text: '왼쪽에 이름을 크게 두고, 그 아래에 역할과 소개를 깔끔하게 정리한 구성' },
+                { key: 'split',   label: '↔️ 좌우 2단',        text: '왼쪽은 이름과 역할, 오른쪽은 아이콘과 관심사 목록으로 나눈 2단 구성' },
+                { key: 'center',  label: '🎯 가운데 집중',     text: '이름을 가운데에 크게 두고 주변을 아이콘으로 둘러 꾸민 구성' },
+                { key: 'ticket',  label: '🎫 공연 티켓',       text: '공연 입장권처럼 절취선과 좌석 번호(예: ROW 7) 장식이 있는 구성' },
+                { key: 'idcard',  label: '🛂 사원증 느낌',     text: '사원증처럼 왼쪽에 아이콘 아바타 사진 자리, 오른쪽에 이름과 소속 이름표가 있는 구성 (실제 사진 대신 아이콘 사용)' }
+            ],
+            square: [
+                { key: 'avatar',  label: '😊 아바타 중심',     text: '가운데에 큰 원형 아바타(아이콘)를 두고 아래에 이름을 둔 프로필 사진 구성' },
+                { key: 'status',  label: '💬 상태메시지',      text: '이름과 말풍선 모양의 상태메시지가 돋보이는 구성' },
+                { key: 'polaroid',label: '📸 폴라로이드',      text: '폴라로이드 사진처럼 흰 테두리 안에 그림을 넣고 아래 여백에 손글씨 느낌으로 이름을 쓴 구성' },
+                { key: 'album',   label: '💿 앨범 커버',       text: '음악 앨범 커버처럼 큰 앨범 제목과 아티스트 이름(나의 이름)이 있는 구성' },
+                { key: 'stats',   label: '🎮 캐릭터 능력치',   text: '게임 캐릭터 카드처럼 레벨과 능력치 막대(예: 창의력·끈기·친화력)가 있는 구성' }
+            ],
+            story: [
+                { key: 'lock',    label: '🔒 잠금화면용',      text: '휴대폰 잠금화면으로 쓰기 좋게 위쪽 3분의 1은 시계 자리로 비워 두고, 아래쪽에 장식과 이름을 둔 구성' },
+                { key: 'poster',  label: '📢 응원 포스터',     text: '나에게 주는 응원 문구를 아주 큰 글씨로 넣은 포스터 구성' },
+                { key: 'flow',    label: '⬇️ 위→아래 자기소개', text: '위에서 아래로 읽어 내려가는 자기소개 구성 (이름 → 좋아하는 것 → 나의 꿈 순서)' },
+                { key: 'bucket',  label: '✅ 버킷리스트',      text: '체크박스가 있는 나의 버킷리스트 3가지를 담은 구성' },
+                { key: 'pattern', label: '✨ 패턴 배경화면',   text: '아이콘이 반복되는 패턴 배경 위에 이름이 작게 들어간 배경화면 구성' }
+            ]
+        };
+
+        // [바이브 코딩] 색 조합
+        const VIBE_PALETTES = [
+            { key: 'pink',    label: '🌸 핑크·라벤더', text: '핑크와 라벤더' },
+            { key: 'ocean',   label: '🌊 블루·민트',   text: '파랑과 민트' },
+            { key: 'citrus',  label: '🍋 노랑·주황',   text: '노랑과 주황' },
+            { key: 'forest',  label: '🌲 초록·베이지', text: '초록과 베이지' },
+            { key: 'mono',    label: '🖤 블랙·골드',   text: '검정과 금색' },
+            { key: 'rainbow', label: '🌈 무지개',      text: '무지개처럼 여러 색' },
+            { key: 'custom',  label: '✏️ 직접쓰기',    text: '' }
+        ];
+
+        // [바이브 코딩] 이름 글꼴 (사이트에 이미 불러온 구글 폰트라서 AI 코드에서 바로 쓸 수 있어요)
+        const VIBE_FONTS = [
+            { key: 'Jua',            cls: 'font-jua',        label: '주아체' },
+            { key: 'Do Hyeon',       cls: 'font-dohyeon',    label: '도현체' },
+            { key: 'Black Han Sans', cls: 'font-black-han',  label: '검은고딕' },
+            { key: 'Bagel Fat One',  cls: 'font-bagel',      label: '베이글체' },
+            { key: 'Dongle',         cls: 'font-dongle',     label: '동글체' },
+            { key: 'Gaegu',          cls: 'font-gaegu',      label: '개구체' },
+            { key: 'Single Day',     cls: 'font-single-day', label: '싱글데이' },
+            { key: 'Gugi',           cls: 'font-gugi',       label: '구기체' }
+        ];
+
+        // [바이브 코딩] 나를 드러내는 정보 (고르면 입력칸이 생겨요)
+        const VIBE_EXTRAS = [
+            { key: 'mbti',     label: '🧠 MBTI',            ph: '예: ENFP',              prompt: 'MBTI' },
+            { key: 'hobby',    label: '⚽ 취미',            ph: '예: 축구, 그림, 요리',  prompt: '취미' },
+            { key: 'food',     label: '🍕 최애 음식',       ph: '예: 떡볶이',            prompt: '가장 좋아하는 음식' },
+            { key: 'music',    label: '🎵 좋아하는 노래',   ph: '예: 좋아하는 노래 제목', prompt: '좋아하는 노래나 가수' },
+            { key: 'subject',  label: '📚 좋아하는 과목',   ph: '예: 과학',              prompt: '좋아하는 과목' },
+            { key: 'motto',    label: '💬 좌우명',          ph: '예: 오늘도 한 걸음!',   prompt: '좌우명' },
+            { key: 'pet',      label: '🐾 반려동물',        ph: '예: 강아지 콩이',       prompt: '반려동물' },
+            { key: 'strength', label: '🌟 나의 장점',       ph: '예: 끈기, 웃음, 배려',  prompt: '나의 장점 키워드' },
+            { key: 'dream',    label: '🚀 이루고 싶은 꿈',  ph: '예: 세계 여행',         prompt: '이루고 싶은 꿈' },
+            { key: 'emoji',    label: '😆 나를 닮은 이모지', ph: '예: 🐱🔥',              prompt: '나를 표현하는 이모지' }
+        ];
+        const VIBE_EXTRA_MAX = 4;
+
+        // [바이브 코딩] '기타' 추가 요청 예시 (누르면 칸에 추가돼요)
+        const VIBE_REQUEST_SUGGESTIONS = [
+            '이름 옆에 반짝이는 별 장식을 넣어 줘',
+            '모서리에 귀여운 스티커 장식 3개를 붙여 줘',
+            '배경에 은은한 패턴을 깔아 줘',
+            '영어 한 줄 슬로건도 넣어 줘',
+            '손글씨 메모지를 붙인 것처럼 꾸며 줘',
+            '레트로 게임 대사창처럼 만들어 줘',
+            '잡지 표지처럼 세련되게 만들어 줘',
+            '말풍선 안에 나의 한마디를 넣어 줘',
+            '도장(스탬프) 모양 장식을 넣어 줘',
+            '글자 크기에 강약을 줘서 리듬감 있게 만들어 줘'
+        ];
+
+        // 이미지 저장(html2canvas)에서 깨지는 효과를 피하도록 AI에게 알려 주는 주의 문장
+        const CAPTURE_SAFE_RULE = '참고: 완성본을 이미지로 저장해야 하니까 그림자(box-shadow, shadow-*), 흐림(blur, backdrop-blur), filter 효과는 쓰지 말고, 테두리·도형·그라데이션으로 꾸며 줘.';
+
         // AI가 오류 없는 코드를 주도록 항상 붙는 기술 조건
         const TECH_RULE = '주의사항: 이미 Tailwind CSS와 FontAwesome 6가 적용된 상태야. 선택한 비율 박스 안에 꽉 차게 들어갈 순수 HTML `<div>` 조각만 작성해 줘. `<html>`, `<body>` 태그나 마크다운 코드블록(```) 설명 없이 오직 HTML 태그만 출력해.';
 
@@ -820,12 +1000,17 @@
         let editorData = newEditorData();   // 일반 모드에서 만드는 중인 명함
         let currentStickerSlot = 0;
         let badgeColorIndex = 0;
-        let exampleFilter = 'all';          // 예시 작품 탭: all / text / vibe
 
         // 바이브 코딩 모드 상태
         let vibeStep = 1;
         let promptEdited = false; // 학생이 프롬프트를 직접 고쳤는지 여부
-        let vibeState = { ratio: 'card', theme: 0, icon: null, mood: null };
+        let vibeState = newVibeState();
+
+        // 바이브 코딩 선택값의 처음 상태
+        //  layout: 구성, palette: 색 조합, font: 이름 글꼴, extras: { 정보이름: 입력한 내용 }
+        function newVibeState() {
+            return { ratio: 'card', theme: 0, layout: null, icon: null, mood: null, palette: null, font: null, extras: {} };
+        }
 
         // 완성 모달 / QR / 개인정보 선택 모달에서 다루는 카드 정보
         let doneCardId = null;
@@ -1083,54 +1268,52 @@
             };
         }
 
-        function setExampleFilter(filter) {
-            exampleFilter = filter;
-            renderExamples();
+        // 예시 줄을 옆으로 넘기는 화살표 버튼
+        function scrollExamples(mode, dir) {
+            const row = document.getElementById(mode === 'text' ? 'exampleRowText' : 'exampleRowVibe');
+            row.scrollBy({ left: dir * 236, behavior: 'smooth' });
         }
 
+        // 텍스트 예시는 오른쪽 위 줄에, 바이브 코딩 예시는 오른쪽 아래 줄에 그려요
         function renderExamples() {
-            const tabs = [['all', '전체'], ['text', '텍스트'], ['vibe', '바이브 코딩']];
-            document.getElementById('exampleTabs').innerHTML = tabs.map(([key, label]) => `
-                <button type="button" onclick="setExampleFilter('${key}')" class="${chipClass(exampleFilter === key)} h-8">${label}</button>
-            `).join('');
-
-            const row = document.getElementById('exampleRow');
-            row.querySelectorAll('.card-frame').forEach(f => frameResizeObserver.unobserve(f));
-            row.innerHTML = '';
-            EXAMPLES.filter(ex => exampleFilter === 'all' || ex.mode === exampleFilter).forEach(ex => {
-                const ratio = getRatio(ex.ratio);
-                const item = document.createElement('div');
-                item.className = 'w-[232px] shrink-0 snap-start flex flex-col';
-
-                // 명함 무대: 정해진 높이 안에 명함이 쏙 들어가게
-                const stage = document.createElement('div');
-                stage.className = 'h-[196px] bg-surface rounded-xl flex items-center justify-center';
-                const frame = buildCardFrame(exampleToCard(ex), 'shot_' + ex.id);
-                frame.style.width = frameWidthFor(ex.ratio, 208, 172) + 'px';
-                stage.appendChild(frame);
-
-                const info = document.createElement('div');
-                info.className = 'mt-2 px-0.5 flex items-center justify-between gap-2';
-                const modeChip = ex.mode === 'vibe'
-                    ? '<span class="shrink-0 h-5 px-1.5 rounded-sm bg-brand-pink-100 text-brand-pink-600 text-xs leading-5 whitespace-nowrap">바이브 코딩</span>'
-                    : '<span class="shrink-0 h-5 px-1.5 rounded-sm bg-brand-blue-100 text-brand-blue-700 text-xs leading-5 whitespace-nowrap">텍스트</span>';
-                const themeName = ex.mode === 'vibe' ? PROMPT_THEMES[ex.theme].name.replace(/^[①-⑤]\s*/, '') : getFont(ex.font).label;
-                info.innerHTML = `
-                    <div class="min-w-0">
-                        <p class="text-[15px] font-medium text-ink truncate">${escapeHtml(ex.name)}</p>
-                        <p class="text-xs text-ink-3 truncate"><i class="fa-solid ${ratio.icon} mr-1"></i>${ratio.short} · ${escapeHtml(themeName)}</p>
-                    </div>${modeChip}`;
-
-                const btn = document.createElement('button');
-                btn.className = 'mt-2 w-full h-9 rounded-lg bg-surface border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-medium whitespace-nowrap transition';
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-brand-pink"></i>이걸로 만들어 보기';
-                btn.onclick = () => startFromExample(ex.id);
-
-                item.appendChild(stage);
-                item.appendChild(info);
-                item.appendChild(btn);
-                row.appendChild(item);
+            [['text', 'exampleRowText'], ['vibe', 'exampleRowVibe']].forEach(([mode, rowId]) => {
+                const row = document.getElementById(rowId);
+                row.querySelectorAll('.card-frame').forEach(f => frameResizeObserver.unobserve(f));
+                row.innerHTML = '';
+                EXAMPLES.filter(ex => ex.mode === mode).forEach(ex => row.appendChild(buildExampleItem(ex)));
             });
+        }
+
+        // 예시 카드 1개 (명함 + 이름 + [이걸로 만들어 보기] 버튼)
+        function buildExampleItem(ex) {
+            const ratio = getRatio(ex.ratio);
+            const item = document.createElement('div');
+            item.className = 'w-[220px] shrink-0 snap-start flex flex-col';
+
+            // 명함 무대: 정해진 높이 안에 명함이 쏙 들어가게
+            const stage = document.createElement('div');
+            stage.className = 'h-[176px] bg-surface lg:bg-white rounded-xl border border-line-light flex items-center justify-center';
+            const frame = buildCardFrame(exampleToCard(ex), 'shot_' + ex.id);
+            frame.style.width = frameWidthFor(ex.ratio, 196, 152) + 'px';
+            stage.appendChild(frame);
+
+            // 이름 + 규격 · 테마(또는 폰트)
+            const themeName = ex.mode === 'vibe' ? PROMPT_THEMES[ex.theme].name.replace(/^[①-⑤]\s*/, '') : getFont(ex.font).label;
+            const info = document.createElement('div');
+            info.className = 'mt-2 px-0.5 min-w-0';
+            info.innerHTML = `
+                <p class="text-[15px] font-medium text-ink truncate">${escapeHtml(ex.name)}</p>
+                <p class="text-xs text-ink-3 truncate"><i class="fa-solid ${ratio.icon} mr-1"></i>${ratio.short} · ${escapeHtml(themeName)}</p>`;
+
+            const btn = document.createElement('button');
+            btn.className = 'mt-2 w-full h-9 rounded-lg bg-surface lg:bg-white border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-medium whitespace-nowrap transition';
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-brand-pink"></i>이걸로 만들어 보기';
+            btn.onclick = () => startFromExample(ex.id);
+
+            item.appendChild(stage);
+            item.appendChild(info);
+            item.appendChild(btn);
+            return item;
         }
 
         // 예시로 시작하기: 텍스트는 편집기, 바이브는 코드가 채워진 바이브 코딩 화면
@@ -1553,14 +1736,15 @@
         // ------------------------------------------------------------
         function openCodingStudioModal() {
             // 이전 학생의 흔적이 남지 않도록 모두 초기화해요
-            vibeState = { ratio: 'card', theme: 0, icon: null, mood: null };
+            vibeState = newVibeState();
             promptEdited = false;
-            ['vibeName', 'vibeRole', 'vibeBio', 'vibeIconCustom', 'vibeMoodCustom', 'liveCodeEditor'].forEach(id => {
+            ['vibeName', 'vibeRole', 'vibeBio', 'vibeIconCustom', 'vibeMoodCustom', 'vibeLayoutCustom', 'vibePaletteCustom', 'vibeExtraRequest', 'liveCodeEditor'].forEach(id => {
                 document.getElementById(id).value = '';
             });
             document.getElementById('promptLockNotice').classList.add('hidden');
 
             renderVibeChips();
+            renderVibeExtraInputs();
             renderVibeRatioChips();
             renderLiveCodePreview();
             updatePrompt();
@@ -1571,7 +1755,7 @@
         // 바이브 코딩 예시로 시작: 프롬프트 선택과 코드가 미리 채워진 채로 Step 2부터 시작해요
         function openVibeWithExample(ex) {
             openCodingStudioModal();
-            vibeState = { ratio: ex.ratio, theme: ex.theme, icon: ex.icon === 'custom' ? null : ex.icon, mood: ex.mood };
+            vibeState = { ...newVibeState(), ratio: ex.ratio, theme: ex.theme, icon: ex.icon === 'custom' ? null : ex.icon, mood: ex.mood };
             document.getElementById('vibeName').value = ex.name;
             document.getElementById('vibeRole').value = ex.role;
             document.getElementById('vibeBio').value = ex.bio;
@@ -1661,9 +1845,114 @@
                 <button type="button" onclick="selectVibeMood('${c.key}')" class="${chipClass(vibeState.mood === c.key)}">${c.label}</button>
             `).join('');
 
+            // 구성 칩: 지금 고른 규격에 맞는 것만 + 직접쓰기
+            const layouts = [...VIBE_LAYOUTS[vibeState.ratio], { key: 'custom', label: '✏️ 직접쓰기' }];
+            document.getElementById('vibeLayoutChips').innerHTML = layouts.map(c => `
+                <button type="button" onclick="selectVibeLayout('${c.key}')" class="${chipClass(vibeState.layout === c.key)}">${c.label}</button>
+            `).join('');
+            document.getElementById('vibeRatioTip').textContent = '💡 ' + VIBE_RATIO_TIPS[vibeState.ratio];
+
+            // 색 조합 칩
+            document.getElementById('vibePaletteChips').innerHTML = VIBE_PALETTES.map(c => `
+                <button type="button" onclick="selectVibePalette('${c.key}')" class="${chipClass(vibeState.palette === c.key)}">${c.label}</button>
+            `).join('');
+
+            // 이름 글꼴 칩: 버튼 글자를 실제 그 글꼴로 보여줘요
+            document.getElementById('vibeFontChips').innerHTML = VIBE_FONTS.map(f => `
+                <button type="button" onclick="selectVibeFont('${f.key}')" class="${chipClass(vibeState.font === f.key)}"><span class="${f.cls}" style="font-size:${Math.round(16 * getFont(f.cls).boost)}px">${f.label}</span></button>
+            `).join('');
+
+            // 나를 드러내는 정보 칩 (여러 개 고를 수 있어요)
+            document.getElementById('vibeExtraChips').innerHTML = VIBE_EXTRAS.map(c => `
+                <button type="button" onclick="toggleVibeExtra('${c.key}')" class="${chipClass(c.key in vibeState.extras)}">${c.label}</button>
+            `).join('');
+
+            // 추가 요청 예시 칩
+            document.getElementById('vibeRequestChips').innerHTML = VIBE_REQUEST_SUGGESTIONS.map((s, i) => `
+                <button type="button" onclick="addRequestSuggestion(${i})" class="h-8 px-2.5 rounded-md text-xs bg-white border border-line text-ink-2 hover:bg-surface hover:text-ink whitespace-nowrap transition">+ ${s}</button>
+            `).join('');
+
             // '기타(직접쓰기)'를 골랐을 때만 입력창을 보여줘요
             document.getElementById('vibeIconCustom').classList.toggle('hidden', vibeState.icon !== 'custom');
             document.getElementById('vibeMoodCustom').classList.toggle('hidden', vibeState.mood !== 'custom');
+            document.getElementById('vibeLayoutCustom').classList.toggle('hidden', vibeState.layout !== 'custom');
+            document.getElementById('vibePaletteCustom').classList.toggle('hidden', vibeState.palette !== 'custom');
+        }
+
+        // 고른 '나를 드러내는 정보'마다 입력칸을 만들어요 (고를 때만 다시 그려서 입력 중 커서가 튀지 않아요)
+        function renderVibeExtraInputs() {
+            const box = document.getElementById('vibeExtraInputs');
+            box.innerHTML = Object.keys(vibeState.extras).map(key => {
+                const ex = VIBE_EXTRAS.find(e => e.key === key);
+                return `<label class="flex items-center gap-2">
+                    <span class="w-28 shrink-0 text-xs text-ink-2 whitespace-nowrap">${ex.label}</span>
+                    <input type="text" maxlength="30" value="${escapeHtml(vibeState.extras[key])}" oninput="onVibeExtraInput('${key}', this.value)" placeholder="${escapeHtml(ex.ph)}" class="flex-1 min-w-0 h-9 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
+                </label>`;
+            }).join('');
+        }
+
+        function selectVibeLayout(key) {
+            vibeState.layout = vibeState.layout === key ? null : key;
+            renderVibeChips();
+            if (vibeState.layout === 'custom') document.getElementById('vibeLayoutCustom').focus();
+            updatePrompt();
+        }
+
+        function selectVibePalette(key) {
+            vibeState.palette = vibeState.palette === key ? null : key;
+            renderVibeChips();
+            if (vibeState.palette === 'custom') document.getElementById('vibePaletteCustom').focus();
+            updatePrompt();
+        }
+
+        function selectVibeFont(key) {
+            vibeState.font = vibeState.font === key ? null : key;
+            renderVibeChips();
+            updatePrompt();
+        }
+
+        // 정보 칩을 누르면 넣거나 빼요 (최대 4개)
+        function toggleVibeExtra(key) {
+            if (key in vibeState.extras) {
+                delete vibeState.extras[key];
+            } else {
+                if (Object.keys(vibeState.extras).length >= VIBE_EXTRA_MAX) {
+                    showToast(`정보는 ${VIBE_EXTRA_MAX}개까지 고를 수 있어요. 다른 칩을 눌러 빼고 골라 주세요!`, 'warn');
+                    return;
+                }
+                vibeState.extras[key] = '';
+            }
+            renderVibeChips();
+            renderVibeExtraInputs();
+            updatePrompt();
+        }
+
+        function onVibeExtraInput(key, value) {
+            vibeState.extras[key] = value.trim();
+            updatePrompt();
+        }
+
+        // 추가 요청 예시를 누르면 칸 끝에 한 줄 붙여요
+        function addRequestSuggestion(i) {
+            const box = document.getElementById('vibeExtraRequest');
+            const text = VIBE_REQUEST_SUGGESTIONS[i];
+            if (box.value.includes(text)) return;
+            box.value = box.value.trim() ? box.value.trim() + '\n' + text : text;
+            updatePrompt();
+        }
+
+        // 🎲 랜덤 조합: 테마·구성·아이콘·분위기·색·글꼴을 무작위로 골라요 (규격과 입력한 글자는 그대로)
+        function randomizeVibe() {
+            const pick = (list) => list[Math.floor(Math.random() * list.length)];
+            vibeState.theme = Math.floor(Math.random() * PROMPT_THEMES.length);
+            vibeState.layout = pick(VIBE_LAYOUTS[vibeState.ratio]).key;
+            vibeState.icon = pick(VIBE_ICONS.filter(c => c.key !== 'custom')).key;
+            vibeState.mood = pick(VIBE_MOODS.filter(c => c.key !== 'custom')).key;
+            vibeState.palette = pick(VIBE_PALETTES.filter(c => c.key !== 'custom')).key;
+            vibeState.font = pick(VIBE_FONTS).key;
+            renderVibeChips();
+            updatePrompt();
+            showToast('🎲 랜덤으로 섞었어요! 마음에 안 들면 한 번 더 눌러 보세요', 'info', 2500);
         }
 
         function selectVibeTheme(i) {
@@ -1700,6 +1989,11 @@
 
         function setVibeRatio(key) {
             vibeState.ratio = key;
+            // 규격이 바뀌면 그 규격에 없는 구성은 선택을 풀어요
+            if (vibeState.layout && vibeState.layout !== 'custom' && !VIBE_LAYOUTS[key].some(l => l.key === vibeState.layout)) {
+                vibeState.layout = null;
+            }
+            renderVibeChips();
             renderVibeRatioChips();
             renderLiveCodePreview();
             updatePrompt();
@@ -1732,20 +2026,46 @@
             const role = getInputValue('vibeRole') || '(역할/꿈을 입력해 주세요)';
             const bio = getInputValue('vibeBio') || '(한 줄 소개를 입력해 주세요)';
 
+            // 구성(레이아웃): 규격별 선택지 또는 직접 쓴 글
+            const layout = vibeState.layout === 'custom'
+                ? getInputValue('vibeLayoutCustom')
+                : ((VIBE_LAYOUTS[vibeState.ratio].find(l => l.key === vibeState.layout) || {}).text || '');
+            const palette = resolveChoice(VIBE_PALETTES, vibeState.palette, 'vibePaletteCustom');
+            const font = VIBE_FONTS.find(f => f.key === vibeState.font);
+            const extraRequest = getInputValue('vibeExtraRequest');
+
             const lines = [
                 '너는 센스 있는 웹 디자이너야. 아래 조건에 맞춰 나만의 디지털 ' + ratio.label + ' 디자인을 HTML로 만들어 줘.',
                 '',
+                '■ 크기/비율: ' + ratio.label + '(' + ratio.desc + ', aspect-ratio: ' + ratio.css + '). 실제 박스 크기는 가로 ' + ratio.w + 'px × 세로 ' + ratio.h + 'px이야. 가장 바깥 <div>에는 반드시 w-full h-full 클래스를 넣고, 모든 글자가 이 크기 안에 들어가도록 글자 크기를 정해 줘. 이름은 한 줄로, 글자가 박스 밖으로 넘치거나 잘리지 않게 해 줘.',
+                '■ 규격 활용 팁: ' + VIBE_RATIO_TIPS[vibeState.ratio],
                 '■ 디자인 테마: ' + theme.name.replace(/^[①-⑤]\s*/, '') + ' — ' + theme.prompt,
+                '■ 구성: ' + (layout || '규격과 테마에 가장 잘 어울리는 구성으로 자유롭게'),
                 '■ 핵심 아이콘/테마: ' + (icon || '테마에 어울리게 자유롭게') + ' → 어울리는 FontAwesome 6 아이콘(<i class="fa-solid ..."></i>)을 2~3개 넣어 줘.',
-                '■ 분위기/성격: ' + (mood ? mood + ' 느낌' : '테마에 어울리게 자유롭게'),
+                '■ 분위기/성격: ' + (mood ? mood + ' 느낌' : '테마에 어울리게 자유롭게')
+            ];
+            if (palette) lines.push('■ 색 조합: ' + palette + '을(를) 중심으로 색을 맞춰 줘.');
+            if (font) lines.push(`■ 이름 글꼴: 이 페이지에 이미 불러와 둔 구글 폰트 '${font.key}'를 써 줘. 이름 태그에 style="font-family:'${font.key}'"처럼 넣으면 돼.`);
+            lines.push(
                 '■ 들어갈 내용:',
                 '  - 이름: ' + name,
                 '  - 역할/꿈: ' + role,
-                '  - 한 줄 소개: ' + bio,
-                '■ 크기/비율: ' + ratio.label + '(' + ratio.desc + ', aspect-ratio: ' + ratio.css + '). 실제 박스 크기는 가로 ' + ratio.w + 'px × 세로 ' + ratio.h + 'px이야. 가장 바깥 <div>에는 반드시 w-full h-full 클래스를 넣고, 모든 글자가 이 크기 안에 들어가도록 글자 크기를 정해 줘. 이름은 한 줄로, 글자가 박스 밖으로 넘치거나 잘리지 않게 해 줘.',
-                '',
-                TECH_RULE
-            ];
+                '  - 한 줄 소개: ' + bio
+            );
+            // 나를 드러내는 정보: 작은 칩이나 아이콘 목록으로 예쁘게
+            const extraKeys = Object.keys(vibeState.extras);
+            if (extraKeys.length) {
+                lines.push('■ 나를 드러내는 정보 (작은 칩·아이콘 목록처럼 예쁘게 넣어 줘):');
+                extraKeys.forEach(key => {
+                    const ex = VIBE_EXTRAS.find(e => e.key === key);
+                    lines.push('  - ' + ex.prompt + ': ' + (vibeState.extras[key] || '(아직 안 정함 → 빈칸 대신 "???"로 표시)'));
+                });
+            }
+            if (extraRequest) {
+                lines.push('■ 추가 요청:');
+                extraRequest.split('\n').map(s => s.trim()).filter(Boolean).forEach(s => lines.push('  - ' + s));
+            }
+            lines.push('', CAPTURE_SAFE_RULE, TECH_RULE);
             return lines.join('\n');
         }
 
