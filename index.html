@@ -9,24 +9,27 @@
     <!-- Tailwind CSS (디자인 도구) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // ===== 디자인 색상표 (디자인/bilibili-light.md 기준) =====
-        // 분홍(brand-pink) = 만들기·저장·QR 같은 '행동' 버튼
-        // 하늘색(brand-blue) = '선택된 상태' 표시
+        // ===== 디자인 색상표 (토스 스타일) =====
+        // 강조색은 '토스 파랑' 하나로 통일했어요.
+        // 예전 코드의 brand-pink / brand-blue 이름은 그대로 두고, 둘 다 파랑으로 연결해서
+        // 버튼·칩·입력칸 코드를 하나하나 고치지 않아도 한꺼번에 바뀌어요.
+        const TOSS_BLUE = { DEFAULT: '#3182F6', 50: '#E8F3FF', 100: '#C9E2FF', 200: '#90C2FF', 300: '#64A8FF', 400: '#4593FC', 500: '#3182F6', 600: '#2272EB', 700: '#1B64DA' };
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'brand-pink': { DEFAULT: '#FF6699', 50: '#FFF3F6', 100: '#FFECF1', 200: '#FFD9E4', 300: '#FFB3CA', 400: '#FF8CB0', 500: '#FF6699', 600: '#E84B85', 700: '#D03171' },
-                        'brand-blue': { DEFAULT: '#00AEEC', 100: '#DFF6FD', 400: '#40C5F1', 500: '#00AEEC', 600: '#008AC5', 700: '#00699D' },
-                        ink: { DEFAULT: '#18191C', 2: '#61666D', 3: '#9499A0', 4: '#C9CCD0' },      // 글자색 1~4단계
-                        line: { DEFAULT: '#E3E5E7', light: '#F1F2F3', bold: '#C9CCD0' },           // 테두리선
-                        surface: { DEFAULT: '#F6F7F8' },                                            // 옅은 회색 면
-                        state: { green: '#2AC864', 'green-bg': '#E4F8EA', orange: '#FF661A', 'orange-bg': '#FFEDE2', red: '#F85A54', 'red-bg': '#FEECEA' }
+                        'brand-pink': TOSS_BLUE,   // 행동 버튼(저장·QR 등)
+                        'brand-blue': TOSS_BLUE,   // 선택된 상태 표시
+                        ink: { DEFAULT: '#191F28', 2: '#4E5968', 3: '#8B95A1', 4: '#B0B8C1' },      // 글자색 1~4단계 (토스 회색)
+                        line: { DEFAULT: '#E5E8EB', light: '#F2F4F6', bold: '#D1D6DB' },           // 테두리선
+                        surface: { DEFAULT: '#F2F4F6' },                                            // 옅은 회색 면
+                        state: { green: '#03B26C', 'green-bg': '#E5F8EF', orange: '#FE9800', 'orange-bg': '#FFF3E0', red: '#F04452', 'red-bg': '#FFEEEE' }
                     },
                     boxShadow: {
-                        float: '0 2px 4px rgba(0,0,0,0.08)',   // 살짝 떠 있는 버튼
-                        pop: '0 0 30px rgba(0,0,0,0.10)',      // 팝오버
-                        modal: '0 8px 40px rgba(0,0,0,0.10)'   // 큰 창(모달)
+                        sm: '0 1px 3px rgba(0,27,55,0.05)',    // 카드에 깔리는 아주 옅은 그림자
+                        float: '0 2px 8px rgba(0,27,55,0.08)', // 살짝 떠 있는 버튼
+                        pop: '0 4px 24px rgba(0,27,55,0.10)',  // 팝오버
+                        modal: '0 8px 40px rgba(0,27,55,0.12)' // 큰 창(모달)
                     }
                 }
             }
@@ -44,9 +47,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&family=Black+Han+Sans&family=Bagel+Fat+One&family=Dongle:wght@400;700&family=Gaegu:wght@400;700&family=Single+Day&family=Gugi&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Pretendard', -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
-            color: #18191C;
+            /* 토스 전용 글꼴은 공개 배포가 안 돼서, 예시 디자인처럼 Pretendard를 써요 */
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            color: #191F28;
             background: #FFFFFF;
+            letter-spacing: -0.012em;   /* 토스처럼 글자 간격을 살짝 좁혀 단단한 느낌 */
             touch-action: manipulation;
             user-select: none;
             /* ★ 한글이 글자 중간에서 끊기지 않고 '단어 단위'로 줄이 바뀌게 해요 */
@@ -101,21 +106,6 @@
             display: flex; align-items: center; justify-content: center; font-size: 24px;
         }
 
-        /* ===== 헤더 배너 (하늘 → 분홍 그라디언트) ===== */
-        .hero-banner { background: linear-gradient(180deg, #7EC8F0 0%, #B9E0F6 55%, #FFD6E3 100%); }
-
-        /* 탄막: 화면 위를 오른쪽 → 왼쪽으로 흘러가는 응원 댓글 */
-        .danmaku {
-            position: absolute; left: 100%; white-space: nowrap; font-weight: 700; color: #fff;
-            text-shadow: 1px 0 1px #000, -1px 0 1px #000, 0 1px 1px #000, 0 -1px 1px #000;
-            animation: danmaku-move linear infinite;
-        }
-        @keyframes danmaku-move {
-            from { transform: translateX(0); }
-            to { transform: translateX(calc(-100vw - 100%)); }
-        }
-        @media (prefers-reduced-motion: reduce) { .danmaku { display: none; } }
-
         /* 모달이 뿅! 하고 나타나는 효과 */
         @keyframes pop-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
         .modal-pop { animation: pop-in 0.2s ease-out; }
@@ -135,12 +125,12 @@
         .speech-bubble::after {
             content: ''; position: absolute; left: 24px; bottom: -8px;
             border-width: 8px 8px 0 8px; border-style: solid;
-            border-color: #DFF6FD transparent transparent transparent;
+            border-color: #E8F3FF transparent transparent transparent;
         }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #F6F7F8; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #C9CCD0; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #F2F4F6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #D1D6DB; border-radius: 4px; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -148,52 +138,48 @@
     <!-- 토스트 알림이 나타나는 자리 (화면 위쪽 가운데) -->
     <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 w-[92%] max-w-xl pointer-events-none"></div>
 
-    <!-- ===================== 상단 헤더 (그라디언트 배너 + 탄막) ===================== -->
-    <header class="hero-banner relative overflow-hidden shrink-0">
-        <!-- 배경 장식 (해, 언덕, 분홍·하늘색 마스코트 모양) -->
-        <span aria-hidden="true" class="absolute -right-6 top-3 w-28 h-28 rounded-full bg-white/35"></span>
-        <span aria-hidden="true" class="absolute left-1/4 -bottom-10 w-80 h-20 rounded-full bg-white/40"></span>
-        <span aria-hidden="true" class="absolute right-24 bottom-0 w-8 h-11 rounded-t-full bg-brand-pink-400/80"></span>
-        <span aria-hidden="true" class="absolute right-36 bottom-0 w-6 h-8 rounded-t-full bg-brand-blue-400/80"></span>
+    <!-- ===================== 상단 헤더 (토스 스타일: 흰 상단바 + 회색 히어로 상자) ===================== -->
+    <header class="shrink-0 bg-white px-4 sm:px-6 pt-3 pb-4">
+        <!-- 상단바: 교표 + 사이트 이름 + 설정 버튼 -->
+        <div class="h-12 flex items-center gap-2.5">
+            <!-- 우리 학교 교표 -->
+            <img src="assets/school-emblem.png" alt="금정 교표" class="w-8 h-8 shrink-0 object-contain">
+            <h1 class="text-lg sm:text-xl font-extrabold text-ink tracking-tight truncate">톡톡(Talk) 바이브 명함소</h1>
+            <!-- 선생님용 부스 설정 버튼 (QR 업로드 키 입력): 토스처럼 회색 동그라미 버튼 -->
+            <button onclick="openSettingsModal()" class="ml-auto w-9 h-9 shrink-0 rounded-full bg-surface hover:bg-line text-ink-2 flex items-center justify-center transition" title="부스 설정 (선생님용)" aria-label="부스 설정">
+                <i class="fa-solid fa-gear text-sm"></i>
+            </button>
+        </div>
 
-        <div class="relative px-4 sm:px-6 pt-4 pb-3 flex flex-col lg:flex-row lg:items-center gap-3">
-            <!-- 제목 줄 -->
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-                <!-- 우리 학교 교표 -->
-                <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full bg-white p-0.5 shadow-float flex items-center justify-center">
-                    <img src="assets/school-emblem.png" alt="금정 교표" class="w-full h-full object-contain">
-                </div>
-                <div class="min-w-0 flex-1">
-                    <h1 class="text-xl sm:text-2xl font-medium text-ink leading-tight">톡톡(Talk) 바이브 명함소</h1>
-                    <p class="text-xs sm:text-sm text-ink-2 mt-0.5">텍스트 입력부터 AI 바이브 코딩까지! 나만의 디지털 명함과 프로필을 만들어보세요.</p>
-                </div>
-                <!-- 선생님용 부스 설정 버튼 (QR 업로드 키 입력) -->
-                <button onclick="openSettingsModal()" class="w-10 h-10 shrink-0 rounded-lg bg-white/80 hover:bg-white text-ink-2 flex items-center justify-center transition" title="부스 설정 (선생님용)">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
+        <!-- 히어로 상자: 옅은 회색 둥근 상자 안에 큰 제목 + 만들기 버튼 2개
+             PC에서는 글(왼쪽) · 버튼(오른쪽), 휴대폰에서는 위아래로 쌓여요 -->
+        <section class="mt-2 rounded-3xl bg-surface px-5 py-5 sm:px-7 sm:py-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6">
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-ink-2">금정 자율동아리 부스</p>
+                <p class="mt-1.5 text-[28px] sm:text-4xl leading-tight font-extrabold text-ink tracking-tighter">나만의 디지털 명함 만들기</p>
+                <p class="mt-2 inline-flex items-center gap-1.5 text-[13px] sm:text-sm font-bold text-brand-blue">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>텍스트 입력부터 AI 바이브 코딩까지!
+                </p>
             </div>
 
-            <!-- 만들기 버튼 2개 -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:w-auto">
-                <button onclick="openCreateModal()" class="h-14 px-4 rounded-lg bg-brand-blue hover:bg-brand-blue-400 active:bg-brand-blue-600 text-white flex items-center gap-3 text-left shadow-float transition">
+            <!-- 만들기 버튼 2개: 일반 모드 = 연한 파랑, 바이브 코딩 = 진한 파랑(주 버튼) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:w-auto shrink-0">
+                <button onclick="openCreateModal()" class="h-14 px-4 rounded-2xl bg-brand-blue-50 hover:bg-brand-blue-100 active:bg-brand-blue-200 text-brand-blue-600 flex items-center gap-3 text-left transition">
                     <i class="fa-solid fa-plus text-lg w-5 text-center"></i>
                     <span class="flex flex-col leading-tight min-w-0">
-                        <span class="text-[15px] font-medium whitespace-nowrap">일반 모드로 만들기</span>
-                        <span class="text-xs text-white/85 whitespace-nowrap">텍스트·스티커로 쉽게 만들기</span>
+                        <span class="text-[15px] font-bold whitespace-nowrap">일반 모드로 만들기</span>
+                        <span class="text-xs text-brand-blue-600/80 whitespace-nowrap">텍스트·스티커로 쉽게 만들기</span>
                     </span>
                 </button>
-                <button onclick="openCodingStudioModal()" class="h-14 px-4 rounded-lg bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white flex items-center gap-3 text-left shadow-float transition">
+                <button onclick="openCodingStudioModal()" class="h-14 px-4 rounded-2xl bg-brand-blue hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white flex items-center gap-3 text-left transition">
                     <i class="fa-solid fa-wand-magic-sparkles text-lg w-5 text-center"></i>
                     <span class="flex flex-col leading-tight min-w-0">
-                        <span class="text-[15px] font-medium whitespace-nowrap">✨ 바이브 코딩으로 만들기</span>
+                        <span class="text-[15px] font-bold whitespace-nowrap">✨ 바이브 코딩으로 만들기</span>
                         <span class="text-xs text-white/85 whitespace-nowrap">프롬프트 조립 &amp; AI 코드로 만들기</span>
                     </span>
                 </button>
             </div>
-        </div>
-
-        <!-- 탄막이 흘러가는 길 -->
-        <div id="danmakuLane" aria-hidden="true" class="relative h-8 sm:h-10 pointer-events-none"></div>
+        </section>
     </header>
 
     <!-- ===================== 메인 화면 =====================
@@ -209,12 +195,12 @@
                 <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-5 pb-3">
                     <div class="flex items-center justify-between gap-2 mb-3">
                         <div class="min-w-0">
-                            <h2 class="text-base sm:text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-font text-brand-blue mr-1.5"></i>텍스트 예시</h2>
+                            <h2 class="text-base sm:text-lg font-bold text-ink whitespace-nowrap"><span class="inline-flex w-8 h-8 mr-2 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue text-sm align-middle"><i class="fa-solid fa-font"></i></span>텍스트 예시</h2>
                             <p class="text-xs text-ink-3 truncate">글자·폰트·색만 골라서 쉽게 만들어요</p>
                         </div>
                         <div class="flex gap-1.5 shrink-0">
-                            <button onclick="scrollExamples('text', -1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                            <button onclick="scrollExamples('text', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                            <button onclick="scrollExamples('text', -1)" class="w-8 h-8 rounded-full bg-surface text-ink-2 hover:bg-line hover:text-ink transition" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button onclick="scrollExamples('text', 1)" class="w-8 h-8 rounded-full bg-surface text-ink-2 hover:bg-line hover:text-ink transition" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                         </div>
                     </div>
                     <div id="exampleRowText" class="shrink-0 flex gap-4 overflow-x-auto pb-2 snap-x"></div>
@@ -222,12 +208,12 @@
                 <section class="lg:flex-1 lg:min-h-[310px] flex flex-col px-4 sm:px-6 pt-4 pb-4 border-t border-line-light">
                     <div class="flex items-center justify-between gap-2 mb-3">
                         <div class="min-w-0">
-                            <h2 class="text-base sm:text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-wand-magic-sparkles text-brand-pink mr-1.5"></i>바이브 코딩 예시</h2>
+                            <h2 class="text-base sm:text-lg font-bold text-ink whitespace-nowrap"><span class="inline-flex w-8 h-8 mr-2 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue text-sm align-middle"><i class="fa-solid fa-wand-magic-sparkles"></i></span>바이브 코딩 예시</h2>
                             <p class="text-xs text-ink-3 truncate">코드가 미리 채워져 있어서 AI 없이도 바로 체험!</p>
                         </div>
                         <div class="flex gap-1.5 shrink-0">
-                            <button onclick="scrollExamples('vibe', -1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                            <button onclick="scrollExamples('vibe', 1)" class="w-8 h-8 rounded-md bg-white border border-line text-ink-3 hover:text-ink" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                            <button onclick="scrollExamples('vibe', -1)" class="w-8 h-8 rounded-full bg-surface text-ink-2 hover:bg-line hover:text-ink transition" title="이전 예시"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button onclick="scrollExamples('vibe', 1)" class="w-8 h-8 rounded-full bg-surface text-ink-2 hover:bg-line hover:text-ink transition" title="다음 예시"><i class="fa-solid fa-chevron-right text-xs"></i></button>
                         </div>
                     </div>
                     <div id="exampleRowVibe" class="shrink-0 flex gap-4 overflow-x-auto pb-2 snap-x"></div>
@@ -244,35 +230,35 @@
             <!-- 오른쪽: 부스 갤러리 (학생 작품) -->
             <section class="flex-1 min-w-0 lg:overflow-y-auto px-4 sm:px-6 py-5 border-t lg:border-t-0 border-line-light lg:bg-surface/60">
                 <div class="flex items-center gap-2 mb-4">
-                    <h2 class="text-lg font-medium text-ink whitespace-nowrap"><i class="fa-solid fa-images text-brand-pink mr-1.5"></i>부스 갤러리</h2>
-                    <span id="galleryCount" class="h-5 min-w-[20px] px-1.5 rounded-full bg-brand-pink text-white text-xs leading-5 text-center">0</span>
+                    <h2 class="text-lg font-bold text-ink whitespace-nowrap"><span class="inline-flex w-8 h-8 mr-2 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue text-sm align-middle"><i class="fa-solid fa-images"></i></span>부스 갤러리</h2>
+                    <span id="galleryCount" class="h-6 min-w-[24px] px-2 rounded-lg bg-brand-blue-50 text-brand-blue-600 text-xs font-bold leading-6 text-center">0</span>
                     <span class="text-xs text-ink-3 truncate">친구들의 작품을 구경해 보세요!</span>
                 </div>
                 <!-- 작품 카드를 예시와 같은 크기(220px)로 칸에 맞춰 여러 줄로 놓아요 -->
                 <div id="cardGrid" class="grid grid-cols-[repeat(auto-fill,220px)] justify-center sm:justify-start gap-4 items-start"></div>
 
                 <!-- 아직 작품이 없을 때: 빈 공간 대신 '체험 방법 3단계' 안내를 보여줘요 -->
-                <div id="emptyState" class="hidden rounded-xl border-2 border-dashed border-line bg-white px-5 py-7 text-center">
+                <div id="emptyState" class="hidden rounded-2xl border-2 border-dashed border-line bg-white px-5 py-7 text-center">
                     <p class="text-4xl mb-2">🖼️</p>
-                    <h3 class="text-lg font-medium text-ink mb-1">아직 전시된 작품이 없어요</h3>
+                    <h3 class="text-lg font-bold text-ink mb-1">아직 전시된 작품이 없어요</h3>
                     <p class="text-sm text-ink-3">첫 번째 작품의 주인공이 되어 보세요!<br>완성한 작품은 여기에 전시돼요.</p>
                     <div class="flex flex-col gap-2 my-5 text-left max-w-sm mx-auto">
-                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                        <div class="bg-surface rounded-xl px-4 py-3 flex items-center gap-3">
                             <span class="text-2xl shrink-0">👆</span>
                             <span class="min-w-0"><b class="block text-sm font-medium text-ink">1. 고르기</b><span class="block text-xs text-ink-2">왼쪽 예시를 고르거나 새로 만들기를 눌러요</span></span>
                         </div>
-                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                        <div class="bg-surface rounded-xl px-4 py-3 flex items-center gap-3">
                             <span class="text-2xl shrink-0">✏️</span>
                             <span class="min-w-0"><b class="block text-sm font-medium text-ink">2. 만들기</b><span class="block text-xs text-ink-2">글자·폰트·색을 고르거나 AI와 바이브 코딩해요</span></span>
                         </div>
-                        <div class="bg-surface rounded-lg px-4 py-3 flex items-center gap-3">
+                        <div class="bg-surface rounded-xl px-4 py-3 flex items-center gap-3">
                             <span class="text-2xl shrink-0">📱</span>
                             <span class="min-w-0"><b class="block text-sm font-medium text-ink">3. 가져가기</b><span class="block text-xs text-ink-2">QR코드를 찍어 내 폰에 저장해요</span></span>
                         </div>
                     </div>
                     <div class="flex flex-wrap justify-center gap-2">
-                        <button onclick="openCreateModal()" class="h-10 px-4 rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white text-sm font-medium whitespace-nowrap transition"><i class="fa-solid fa-plus mr-1.5"></i>일반 모드</button>
-                        <button onclick="openCodingStudioModal()" class="h-10 px-4 rounded-lg bg-brand-pink hover:bg-brand-pink-400 text-white text-sm font-medium whitespace-nowrap transition">✨ 바이브 코딩</button>
+                        <button onclick="openCreateModal()" class="h-10 px-4 rounded-xl bg-brand-blue hover:bg-brand-blue-600 text-white text-sm font-semibold whitespace-nowrap transition"><i class="fa-solid fa-plus mr-1.5"></i>일반 모드</button>
+                        <button onclick="openCodingStudioModal()" class="h-10 px-4 rounded-xl bg-brand-pink hover:bg-brand-blue-600 text-white text-sm font-semibold whitespace-nowrap transition">✨ 바이브 코딩</button>
                     </div>
                 </div>
             </section>
@@ -283,14 +269,14 @@
     <div id="editorModal" class="fixed inset-0 bg-white z-50 hidden flex flex-col overflow-hidden">
         <header class="h-14 bg-white border-b border-line px-4 sm:px-6 flex items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-2 min-w-0">
-                <span class="shrink-0 h-6 px-2 rounded-sm bg-brand-blue-100 text-brand-blue-700 text-xs font-medium leading-6 whitespace-nowrap">일반 모드</span>
-                <h2 class="hidden sm:block text-lg font-medium text-ink truncate">텍스트로 만드는 나만의 명함</h2>
+                <span class="shrink-0 h-6 px-2 rounded-md bg-brand-blue-50 text-brand-blue-600 text-xs font-bold leading-6 whitespace-nowrap">일반 모드</span>
+                <h2 class="hidden sm:block text-lg font-bold text-ink truncate">텍스트로 만드는 나만의 명함</h2>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="closeEditor()" class="h-9 px-3 rounded-lg bg-surface border border-line-light text-ink-2 font-medium hover:bg-line whitespace-nowrap transition">
+                <button onclick="closeEditor()" class="h-9 px-3 rounded-xl bg-surface border border-line-light text-ink-2 font-semibold hover:bg-line whitespace-nowrap transition">
                     <i class="fa-solid fa-xmark mr-1"></i>나가기
                 </button>
-                <button onclick="saveAndLockCard()" class="h-9 px-4 rounded-lg bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white font-medium whitespace-nowrap transition">
+                <button onclick="saveAndLockCard()" class="h-9 px-4 rounded-xl bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white font-semibold whitespace-nowrap transition">
                     <i class="fa-solid fa-floppy-disk mr-1"></i>저장 및 완료
                 </button>
             </div>
@@ -308,20 +294,20 @@
             <div class="flex-1 lg:flex-none lg:w-[480px] min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
                 <!-- ① 예시 템플릿 -->
                 <section>
-                    <h3 class="text-sm font-medium text-ink mb-1">① 예시 템플릿 불러오기</h3>
+                    <h3 class="text-sm font-bold text-ink mb-1">① 예시 템플릿 불러오기</h3>
                     <p class="text-xs text-ink-3 mb-2">누르면 글자·폰트·색·스티커가 한 번에 채워져요. 그다음 내 정보로 바꿔 보세요!</p>
                     <div id="edTemplates" class="flex flex-wrap gap-2"></div>
                 </section>
 
                 <!-- ② 규격 -->
                 <section>
-                    <h3 class="text-sm font-medium text-ink mb-2">② 결과물 규격(비율)</h3>
+                    <h3 class="text-sm font-bold text-ink mb-2">② 결과물 규격(비율)</h3>
                     <div id="edRatios" class="grid grid-cols-3 gap-2"></div>
                 </section>
 
                 <!-- ③ 글자 -->
                 <section class="space-y-3">
-                    <h3 class="text-sm font-medium text-ink">③ 글자 입력 <span class="text-xs font-normal text-ink-3">(입력하면 미리보기에 바로 보여요)</span></h3>
+                    <h3 class="text-sm font-bold text-ink">③ 글자 입력 <span class="text-xs font-normal text-ink-3">(입력하면 미리보기에 바로 보여요)</span></h3>
                     <div>
                         <label class="block text-xs font-medium text-ink-2 mb-1">이름 / 닉네임</label>
                         <input type="text" id="edName" oninput="onEditorInput()" maxlength="12" placeholder="예: 김코딩" class="w-full h-11 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-base">
@@ -338,24 +324,24 @@
 
                 <!-- ④ 폰트 -->
                 <section>
-                    <h3 class="text-sm font-medium text-ink mb-2">④ 폰트 고르기 <span class="text-xs font-normal text-ink-3">(8종)</span></h3>
+                    <h3 class="text-sm font-bold text-ink mb-2">④ 폰트 고르기 <span class="text-xs font-normal text-ink-3">(8종)</span></h3>
                     <div id="edFonts" class="grid grid-cols-4 gap-2"></div>
                 </section>
 
                 <!-- ⑤ 배경 색상 -->
                 <section>
-                    <h3 class="text-sm font-medium text-ink mb-1">⑤ 배경 색상 고르기</h3>
+                    <h3 class="text-sm font-bold text-ink mb-1">⑤ 배경 색상 고르기</h3>
                     <p id="edColorHint" class="text-xs text-ink-3 mb-2"></p>
                     <div id="edColors" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
                 </section>
 
                 <!-- ⑥ 스티커 -->
                 <section>
-                    <h3 class="text-sm font-medium text-ink mb-2">⑥ 아이콘 스티커</h3>
+                    <h3 class="text-sm font-bold text-ink mb-2">⑥ 아이콘 스티커</h3>
                     <div class="flex items-center gap-2 bg-surface p-1.5 rounded-lg mb-2">
                         <span class="text-xs text-ink-2 font-medium pl-1.5 whitespace-nowrap">붙일 자리</span>
-                        <button onclick="setStickerSlot(0)" id="slotBtn0" class="flex-1 h-8 text-xs font-medium rounded-md transition">슬롯 1</button>
-                        <button onclick="setStickerSlot(1)" id="slotBtn1" class="flex-1 h-8 text-xs font-medium rounded-md transition">슬롯 2</button>
+                        <button onclick="setStickerSlot(0)" id="slotBtn0" class="flex-1 h-8 text-xs font-semibold rounded-md transition">슬롯 1</button>
+                        <button onclick="setStickerSlot(1)" id="slotBtn1" class="flex-1 h-8 text-xs font-semibold rounded-md transition">슬롯 2</button>
                     </div>
                     <div id="edStickers" class="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-4 gap-2"></div>
                     <p class="text-xs text-ink-3 mt-2 lg:hidden">💡 미리보기의 스티커를 누르면 다시 빠져요.</p>
@@ -363,10 +349,10 @@
 
                 <!-- ⑦ 문구 배지 -->
                 <section class="pb-6">
-                    <h3 class="text-sm font-medium text-ink mb-2">⑦ 문구 배지 <span class="text-xs font-normal text-ink-3">(최대 3개, 누르면 지워져요)</span></h3>
+                    <h3 class="text-sm font-bold text-ink mb-2">⑦ 문구 배지 <span class="text-xs font-normal text-ink-3">(최대 3개, 누르면 지워져요)</span></h3>
                     <div class="flex gap-2 mb-2">
                         <input type="text" id="edBadgeText" maxlength="10" placeholder="예: 우수체험 (10자)" onkeydown="if(event.key==='Enter') addBadge()" class="flex-1 min-w-0 h-10 px-3 rounded-md bg-surface border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none text-sm">
-                        <button onclick="addBadge()" class="h-10 px-4 shrink-0 rounded-lg bg-surface border border-line-light text-ink-2 font-medium hover:bg-line whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i>추가</button>
+                        <button onclick="addBadge()" class="h-10 px-4 shrink-0 rounded-xl bg-surface border border-line-light text-ink-2 font-semibold hover:bg-line whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i>추가</button>
                     </div>
                     <div id="edBadgeColors" class="flex gap-2 mb-2"></div>
                     <div id="edBadgeList" class="flex flex-wrap gap-1.5"></div>
@@ -379,12 +365,12 @@
     <div id="codingStudioModal" class="fixed inset-0 bg-white z-50 hidden flex flex-col overflow-hidden">
         <header class="h-14 bg-white border-b border-line px-4 sm:px-6 flex items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                <span class="shrink-0 h-6 px-2 rounded-sm bg-brand-pink text-white text-xs font-medium leading-6 whitespace-nowrap">바이브 코딩</span>
-                <h2 class="hidden xl:block text-lg font-medium text-ink whitespace-nowrap">AI와 함께 만드는 나만의 명함</h2>
+                <span class="shrink-0 h-6 px-2 rounded-md bg-brand-blue-50 text-brand-blue-600 text-xs font-bold leading-6 whitespace-nowrap">바이브 코딩</span>
+                <h2 class="hidden xl:block text-lg font-bold text-ink whitespace-nowrap">AI와 함께 만드는 나만의 명함</h2>
                 <!-- 지금 몇 단계인지 보여주는 진행 표시 -->
                 <div id="vibeProgress" class="flex items-center gap-1 text-xs"></div>
             </div>
-            <button onclick="closeCodingStudioModal()" class="shrink-0 h-9 px-3 rounded-lg bg-surface border border-line-light text-ink-2 font-medium hover:bg-line whitespace-nowrap transition">
+            <button onclick="closeCodingStudioModal()" class="shrink-0 h-9 px-3 rounded-xl bg-surface border border-line-light text-ink-2 font-semibold hover:bg-line whitespace-nowrap transition">
                 <i class="fa-solid fa-xmark mr-1"></i>나가기
             </button>
         </header>
@@ -394,27 +380,27 @@
             <div id="vibeStepsPanel" class="w-full lg:w-[58%] p-4 sm:p-6 space-y-5 lg:overflow-y-auto">
 
                 <!-- ---------- Step 1 ---------- -->
-                <section id="vibeStep1" class="vibe-step rounded-xl border p-4 sm:p-5">
+                <section id="vibeStep1" class="vibe-step rounded-2xl border p-4 sm:p-5">
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div class="flex items-start gap-3 min-w-0">
                             <span class="shrink-0 w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center font-medium">1</span>
                             <div class="min-w-0">
-                                <h3 class="text-base sm:text-lg font-medium text-ink flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h3 class="text-base sm:text-lg font-bold text-ink flex flex-wrap items-center gap-x-2 gap-y-1">
                                     프롬프트 조립하기
                                     <span id="vibeDone1" class="hidden whitespace-nowrap h-5 px-1.5 rounded-sm bg-state-green-bg text-state-green text-xs leading-5">완료 ✓</span>
                                 </h3>
                                 <p class="text-xs text-ink-3">AI에게 보낼 주문서를 버튼으로 만들어요</p>
                             </div>
                         </div>
-                        <button id="vibeRedo1" onclick="setVibeStep(1)" class="hidden pointer-events-auto shrink-0 whitespace-nowrap h-8 px-2.5 rounded-md bg-white border border-line text-xs text-brand-pink font-medium hover:bg-brand-pink-50"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
+                        <button id="vibeRedo1" onclick="setVibeStep(1)" class="hidden pointer-events-auto shrink-0 whitespace-nowrap h-8 px-2.5 rounded-md bg-white border border-line text-xs text-brand-pink font-semibold hover:bg-brand-pink-50"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
                     </div>
-                    <div class="speech-bubble bg-brand-blue-100 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
+                    <div class="speech-bubble bg-brand-blue-50 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
                         💬 <b class="font-medium">타자를 길게 칠 필요 없어요!</b> 아래 버튼들을 <b class="font-medium">콕콕 누르기만</b> 하면 AI에게 보낼 <span class="whitespace-nowrap">주문서(프롬프트)가</span> 자동으로 완성돼요. 마지막에 <b class="font-medium">[프롬프트 완성 &amp; 복사하기]</b>를 눌러 주세요.
                     </div>
 
                     <div class="space-y-5">
                         <!-- 고르기 어려우면 랜덤으로! -->
-                        <button onclick="randomizeVibe()" class="w-full h-10 rounded-lg bg-surface border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-medium whitespace-nowrap transition">🎲 고르기 어렵다면? 랜덤으로 섞어 보기</button>
+                        <button onclick="randomizeVibe()" class="w-full h-10 rounded-xl bg-surface border border-line-light text-ink-2 hover:bg-line hover:text-ink text-sm font-semibold whitespace-nowrap transition">🎲 고르기 어렵다면? 랜덤으로 섞어 보기</button>
                         <div>
                             <p class="text-sm font-medium text-ink mb-2">① 결과물 규격(비율)</p>
                             <div id="vibeRatioChipsStep1" class="flex flex-wrap gap-2"></div>
@@ -488,32 +474,32 @@
                             <!-- 학생이 직접 고쳤을 때 나오는 안내 -->
                             <div id="promptLockNotice" class="hidden mb-2 text-xs bg-state-orange-bg text-state-orange rounded-md px-3 py-2 flex flex-wrap items-center justify-between gap-2">
                                 <span>✋ 프롬프트를 직접 고쳐서 자동 조립을 잠시 멈췄어요.</span>
-                                <button onclick="resetPromptAuto()" class="h-7 px-2.5 rounded-md bg-white border border-line text-ink-2 font-medium whitespace-nowrap hover:bg-surface">다시 자동으로 조립하기</button>
+                                <button onclick="resetPromptAuto()" class="h-7 px-2.5 rounded-md bg-white border border-line text-ink-2 font-semibold whitespace-nowrap hover:bg-surface">다시 자동으로 조립하기</button>
                             </div>
                             <textarea id="vibePromptBox" oninput="onPromptManualEdit()" rows="10" class="w-full bg-surface text-ink text-sm p-3 rounded-md border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none leading-relaxed"></textarea>
                         </div>
-                        <button onclick="copyPromptAndNext()" class="w-full h-12 bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-base font-medium rounded-lg transition whitespace-nowrap">
+                        <button onclick="copyPromptAndNext()" class="w-full h-12 bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white text-base font-semibold rounded-xl transition whitespace-nowrap">
                             <i class="fa-solid fa-copy mr-2"></i>프롬프트 완성 &amp; 복사하기
                         </button>
                     </div>
                 </section>
 
                 <!-- ---------- Step 2 ---------- -->
-                <section id="vibeStep2" class="vibe-step rounded-xl border p-4 sm:p-5">
+                <section id="vibeStep2" class="vibe-step rounded-2xl border p-4 sm:p-5">
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div class="flex items-start gap-3 min-w-0">
                             <span class="shrink-0 w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center font-medium">2</span>
                             <div class="min-w-0">
-                                <h3 class="text-base sm:text-lg font-medium text-ink flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h3 class="text-base sm:text-lg font-bold text-ink flex flex-wrap items-center gap-x-2 gap-y-1">
                                     AI 코드 붙여넣기
                                     <span id="vibeDone2" class="hidden whitespace-nowrap h-5 px-1.5 rounded-sm bg-state-green-bg text-state-green text-xs leading-5">완료 ✓</span>
                                 </h3>
                                 <p class="text-xs text-ink-3">Gemini나 ChatGPT가 만든 코드를 가져와요</p>
                             </div>
                         </div>
-                        <button id="vibeRedo2" onclick="setVibeStep(2)" class="hidden pointer-events-auto shrink-0 whitespace-nowrap h-8 px-2.5 rounded-md bg-white border border-line text-xs text-brand-pink font-medium hover:bg-brand-pink-50"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
+                        <button id="vibeRedo2" onclick="setVibeStep(2)" class="hidden pointer-events-auto shrink-0 whitespace-nowrap h-8 px-2.5 rounded-md bg-white border border-line text-xs text-brand-pink font-semibold hover:bg-brand-pink-50"><i class="fa-solid fa-rotate-left mr-1"></i>다시 수정하기</button>
                     </div>
-                    <div class="speech-bubble bg-brand-blue-100 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
+                    <div class="speech-bubble bg-brand-blue-50 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
                         💬 이제 AI에게 주문할 차례예요!
                         <ol class="list-decimal ml-5 mt-1 space-y-0.5">
                             <li>아래 버튼으로 <b class="font-medium">Gemini</b> 또는 <b class="font-medium">ChatGPT</b>를 열어요.</li>
@@ -523,30 +509,30 @@
                         </ol>
                     </div>
                     <div class="flex flex-wrap gap-2 mb-3">
-                        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="h-9 px-3 inline-flex items-center rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white text-sm font-medium whitespace-nowrap transition"><i class="fa-solid fa-gem mr-1.5"></i>Gemini 열기</a>
-                        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="h-9 px-3 inline-flex items-center rounded-lg bg-brand-blue hover:bg-brand-blue-400 text-white text-sm font-medium whitespace-nowrap transition"><i class="fa-solid fa-robot mr-1.5"></i>ChatGPT 열기</a>
-                        <button onclick="copyPromptOnly()" class="h-9 px-3 rounded-lg bg-surface border border-line-light text-ink-2 text-sm font-medium whitespace-nowrap hover:bg-line transition"><i class="fa-solid fa-copy mr-1.5"></i>프롬프트 다시 복사</button>
+                        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="h-9 px-3 inline-flex items-center rounded-xl bg-brand-blue hover:bg-brand-blue-600 text-white text-sm font-semibold whitespace-nowrap transition"><i class="fa-solid fa-gem mr-1.5"></i>Gemini 열기</a>
+                        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="h-9 px-3 inline-flex items-center rounded-xl bg-brand-blue hover:bg-brand-blue-600 text-white text-sm font-semibold whitespace-nowrap transition"><i class="fa-solid fa-robot mr-1.5"></i>ChatGPT 열기</a>
+                        <button onclick="copyPromptOnly()" class="h-9 px-3 rounded-xl bg-surface border border-line-light text-ink-2 text-sm font-semibold whitespace-nowrap hover:bg-line transition"><i class="fa-solid fa-copy mr-1.5"></i>프롬프트 다시 복사</button>
                     </div>
                     <div class="flex items-center justify-between mb-1.5 px-0.5">
                         <span class="text-xs font-medium text-ink-2 whitespace-nowrap"><i class="fa-solid fa-code text-brand-blue mr-1.5"></i>코드 붙여넣는 곳</span>
                         <button onclick="resetCodingTemplate()" class="text-xs text-ink-3 hover:text-brand-pink whitespace-nowrap"><i class="fa-solid fa-eraser mr-1"></i>코드 지우기</button>
                     </div>
                     <textarea id="liveCodeEditor" oninput="renderLiveCodePreview()" rows="9" placeholder="<!-- 여기에 AI가 만들어 준 HTML 코드를 붙여넣어 주세요! (Ctrl + V) -->" class="w-full bg-surface text-ink font-mono text-xs p-3 rounded-md border-2 border-transparent focus:bg-white focus:border-brand-blue focus:outline-none resize-y leading-relaxed"></textarea>
-                    <button id="btnToStep3" onclick="goToStep3()" disabled class="mt-3 w-full h-12 bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-base font-medium rounded-lg transition whitespace-nowrap disabled:bg-brand-pink-300 disabled:cursor-not-allowed">
+                    <button id="btnToStep3" onclick="goToStep3()" disabled class="mt-3 w-full h-12 bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white text-base font-semibold rounded-xl transition whitespace-nowrap disabled:bg-brand-pink-300 disabled:cursor-not-allowed">
                         다음: 최종 확인하기 <i class="fa-solid fa-arrow-right ml-1"></i>
                     </button>
                 </section>
 
                 <!-- ---------- Step 3 ---------- -->
-                <section id="vibeStep3" class="vibe-step rounded-xl border p-4 sm:p-5">
+                <section id="vibeStep3" class="vibe-step rounded-2xl border p-4 sm:p-5">
                     <div class="flex items-start gap-3 mb-4">
                         <span class="shrink-0 w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center font-medium">3</span>
                         <div class="min-w-0">
-                            <h3 class="text-base sm:text-lg font-medium text-ink">최종 확인 &amp; 저장하기</h3>
+                            <h3 class="text-base sm:text-lg font-bold text-ink">최종 확인 &amp; 저장하기</h3>
                             <p class="text-xs text-ink-3">미리보기를 보고 마음에 들면 저장해요</p>
                         </div>
                     </div>
-                    <div class="speech-bubble bg-brand-blue-100 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
+                    <div class="speech-bubble bg-brand-blue-50 text-ink text-sm leading-relaxed rounded-lg px-4 py-3 mb-5">
                         💬 <b class="font-medium">미리보기</b>를 꼼꼼히 살펴봐요!
                         <ul class="list-disc ml-5 mt-1 space-y-0.5">
                             <li>글자가 잘리거나 상자 밖으로 넘치지 않았나요?</li>
@@ -554,7 +540,7 @@
                             <li>마음에 안 들면 AI에게 <b class="font-medium">"글자를 더 작게 해 줘"</b>처럼 다시 부탁하고, Step 2의 <b class="font-medium">[다시 수정하기]</b>로 코드를 바꿔 넣어요.</li>
                         </ul>
                     </div>
-                    <button onclick="saveCodingCard()" class="w-full h-12 bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-base font-medium rounded-lg transition whitespace-nowrap">
+                    <button onclick="saveCodingCard()" class="w-full h-12 bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white text-base font-semibold rounded-xl transition whitespace-nowrap">
                         <i class="fa-solid fa-floppy-disk mr-2"></i>완성 및 저장하기
                     </button>
                 </section>
@@ -571,28 +557,28 @@
 
     <!-- ===================== 3. 완성 축하 모달 (저장 직후) ===================== -->
     <div id="doneModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-modal w-full max-w-lg max-h-[92vh] overflow-y-auto modal-pop">
-            <div class="hero-banner px-6 py-5 text-center">
+        <div class="bg-white rounded-3xl shadow-modal w-full max-w-lg max-h-[92vh] overflow-y-auto modal-pop">
+            <div class="bg-brand-blue-50 px-6 py-6 text-center">
                 <p class="text-3xl mb-1">🎉</p>
-                <h3 class="text-xl font-medium text-ink">완성! 정말 멋진 작품이에요!</h3>
+                <h3 class="text-xl font-bold text-ink">완성! 정말 멋진 작품이에요!</h3>
                 <p class="text-sm text-ink-2">이제 내 휴대폰이나 PC로 가져가 볼까요?</p>
             </div>
             <div class="p-5 sm:p-6 flex flex-col items-center">
                 <div id="donePreview" class="w-full flex justify-center mb-5"></div>
                 <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button onclick="openQrFromDone()" class="h-12 bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white font-medium rounded-lg whitespace-nowrap transition">📱 QR코드로 내 폰에 받기</button>
-                    <button onclick="downloadFromDone()" class="h-12 bg-brand-blue hover:bg-brand-blue-400 active:bg-brand-blue-600 text-white font-medium rounded-lg whitespace-nowrap transition">💾 PC에 이미지 저장</button>
+                    <button onclick="openQrFromDone()" class="h-12 bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white font-semibold rounded-xl whitespace-nowrap transition">📱 QR코드로 내 폰에 받기</button>
+                    <button onclick="downloadFromDone()" class="h-12 bg-brand-blue-50 hover:bg-brand-blue-100 active:bg-brand-blue-200 text-brand-blue-600 font-semibold rounded-xl whitespace-nowrap transition">💾 PC에 이미지 저장</button>
                 </div>
-                <button onclick="closeDoneModal()" class="mt-2 w-full h-11 bg-surface hover:bg-line border border-line-light text-ink-2 font-medium rounded-lg">닫기(완료)</button>
+                <button onclick="closeDoneModal()" class="mt-2 w-full h-11 bg-surface hover:bg-line border border-line-light text-ink-2 font-semibold rounded-xl">닫기(완료)</button>
             </div>
         </div>
     </div>
 
     <!-- ===================== 4. QR코드 스캔 모달 ===================== -->
     <div id="qrModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-modal w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden modal-pop">
+        <div class="bg-white rounded-3xl shadow-modal w-full max-w-lg max-h-[94vh] flex flex-col overflow-hidden modal-pop">
             <div class="px-5 h-14 border-b border-line-light flex items-center justify-center shrink-0">
-                <h3 class="text-lg font-medium text-ink"><i class="fa-solid fa-qrcode text-brand-pink mr-2"></i>QR코드로 내 폰에 받기</h3>
+                <h3 class="text-lg font-bold text-ink"><i class="fa-solid fa-qrcode text-brand-pink mr-2"></i>QR코드로 내 폰에 받기</h3>
             </div>
             <div class="p-5 sm:p-6 overflow-y-auto">
                 <!-- (1) 준비 중 화면 -->
@@ -626,27 +612,27 @@
                         </ol>
                     </div>
                     <img id="qrFallbackImg" alt="내가 만든 명함 사진" class="mx-auto my-4 max-h-[45vh] max-w-full rounded-lg">
-                    <button onclick="downloadQrFallbackImage()" class="w-full h-11 bg-brand-blue hover:bg-brand-blue-400 text-white font-medium rounded-lg whitespace-nowrap transition">💾 PC에 이미지 저장</button>
+                    <button onclick="downloadQrFallbackImage()" class="w-full h-11 bg-brand-blue hover:bg-brand-blue-600 text-white font-semibold rounded-xl whitespace-nowrap transition">💾 PC에 이미지 저장</button>
                 </div>
             </div>
             <div class="px-5 sm:px-6 py-4 border-t border-line-light shrink-0">
-                <button onclick="finishQrModal()" class="w-full h-12 bg-ink hover:bg-ink-2 text-white text-base font-medium rounded-lg transition">닫기(완료)</button>
+                <button onclick="finishQrModal()" class="w-full h-12 bg-ink hover:bg-ink-2 text-white text-base font-semibold rounded-xl transition">닫기(완료)</button>
             </div>
         </div>
     </div>
 
     <!-- ===================== 5. 갤러리 유지/삭제 선택 모달 (개인정보 보호) ===================== -->
     <div id="privacyModal" class="fixed inset-0 bg-black/50 z-[70] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-modal w-full max-w-md overflow-hidden modal-pop text-center">
+        <div class="bg-white rounded-3xl shadow-modal w-full max-w-md overflow-hidden modal-pop text-center">
             <div class="p-6 sm:p-8">
                 <p class="text-5xl mb-3">🤔</p>
-                <h3 class="text-xl sm:text-2xl font-medium text-ink mb-2">잠깐! 만든 프로필을<br>부스 갤러리에 남겨둘까요?</h3>
+                <h3 class="text-xl sm:text-2xl font-bold text-ink mb-2">잠깐! 만든 프로필을<br>부스 갤러리에 남겨둘까요?</h3>
                 <p class="text-sm text-ink-2 mb-6">갤러리에 남기면 다른 친구들이 내 작품을 구경할 수 있어요. 내 이름이 남는 게 싫다면 지금 바로 지울 수 있어요.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button onclick="keepCardInGallery()" class="py-3 bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white font-medium rounded-lg transition">
+                    <button onclick="keepCardInGallery()" class="py-3 bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white font-semibold rounded-xl transition">
                         <span class="block whitespace-nowrap">🌟 갤러리에 자랑하기</span><span class="block text-xs text-white/85">(유지)</span>
                     </button>
-                    <button onclick="deleteCardForPrivacy()" class="py-3 bg-state-red hover:opacity-90 text-white font-medium rounded-lg transition">
+                    <button onclick="deleteCardForPrivacy()" class="py-3 bg-state-red hover:opacity-90 text-white font-semibold rounded-xl transition">
                         <span class="block whitespace-nowrap">🔒 내 정보 지우기</span><span class="block text-xs text-white/85">(삭제)</span>
                     </button>
                 </div>
@@ -656,9 +642,9 @@
 
     <!-- ===================== 6. 부스 설정 모달 (선생님용) ===================== -->
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-modal w-full max-w-md max-h-[92vh] overflow-y-auto modal-pop">
+        <div class="bg-white rounded-3xl shadow-modal w-full max-w-md max-h-[92vh] overflow-y-auto modal-pop">
             <div class="px-5 h-14 border-b border-line-light flex justify-between items-center">
-                <h3 class="text-base font-medium text-ink"><i class="fa-solid fa-gear text-ink-3 mr-2"></i>부스 설정 (선생님용)</h3>
+                <h3 class="text-base font-bold text-ink"><i class="fa-solid fa-gear text-ink-3 mr-2"></i>부스 설정 (선생님용)</h3>
                 <button onclick="closeSettingsModal()" class="w-9 h-9 rounded-md text-ink-3 hover:bg-surface hover:text-ink"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="p-5 space-y-4 text-sm">
@@ -681,8 +667,8 @@
                 </div>
             </div>
             <div class="px-5 py-4 border-t border-line-light flex justify-between gap-2">
-                <button onclick="removeImgbbKey()" class="h-9 px-3 rounded-lg bg-state-red-bg text-state-red text-sm font-medium hover:opacity-80 whitespace-nowrap">키 지우기</button>
-                <button onclick="saveImgbbKey()" class="h-9 px-5 rounded-lg bg-brand-pink hover:bg-brand-pink-400 text-white text-sm font-medium whitespace-nowrap">저장</button>
+                <button onclick="removeImgbbKey()" class="h-9 px-3 rounded-xl bg-state-red-bg text-state-red text-sm font-semibold hover:opacity-80 whitespace-nowrap">키 지우기</button>
+                <button onclick="saveImgbbKey()" class="h-9 px-5 rounded-xl bg-brand-pink hover:bg-brand-blue-600 text-white text-sm font-semibold whitespace-nowrap">저장</button>
             </div>
         </div>
     </div>
@@ -998,7 +984,6 @@
         ];
 
         // 헤더에 흘러가는 탄막(응원 댓글)
-        const DANMAKU_MESSAGES = ['와 대박!!', '나도 명함 만들래~', '(゜-゜)つロ 건배~', 'AI랑 코딩하는 중 ✨', '이 부스 맛집이네', 'QR로 바로 받았다!', '프로필 사진 바꿔야지', '명함 장인 등장', '우리 반 인싸 여기 있음'];
 
         // ------------------------------------------------------------
         // [상태 변수] 지금 화면이 어떤 상태인지 기억하는 곳
@@ -1047,7 +1032,6 @@
             new ResizeObserver(fitEditorPreview).observe(document.getElementById('editorPreviewStage'));
             loadCardsFromStorage();
             renderExamples();
-            startDanmaku();
             setupSplitHandle();
         });
 
@@ -1118,25 +1102,6 @@
         }
 
         // ------------------------------------------------------------
-        // [헤더 탄막] 응원 댓글이 오른쪽 → 왼쪽으로 흘러가요
-        // ------------------------------------------------------------
-        function startDanmaku() {
-            const lane = document.getElementById('danmakuLane');
-            const colors = ['#FFFFFF', '#FFE35C', '#9FF0FF', '#FFFFFF', '#FFD9E4'];
-            // 화면이 좁으면 한 줄에 띄우는 탄막 수를 줄여서 서로 겹치지 않게 해요
-            const perRow = Math.max(2, Math.min(5, Math.floor(window.innerWidth / 260)));
-            const rows = [[], []];
-            DANMAKU_MESSAGES.slice(0, perRow * 2).forEach((msg, i) => rows[i % 2].push(msg));
-            lane.innerHTML = rows.map((row, r) => {
-                const duration = r === 0 ? 20 : 24;       // 같은 줄은 같은 속도라 앞사람을 따라잡지 않아요
-                return row.map((msg, k) => {
-                    const delay = -(k * duration / row.length) - r * 2; // 같은 간격으로 미리 출발
-                    return `<span class="danmaku text-xs sm:text-sm" style="top:${r * 50}%;color:${colors[(k + r) % colors.length]};animation-duration:${duration}s;animation-delay:${delay}s">${escapeHtml(msg)}</span>`;
-                }).join('');
-            }).join('');
-        }
-
-        // ------------------------------------------------------------
         // [공용 도구] 토스트 알림, 모달 열고 닫기
         // ------------------------------------------------------------
         function showToast(message, type = 'success', duration = 3200) {
@@ -1147,7 +1112,7 @@
                 error:   '<i class="fa-solid fa-circle-xmark text-state-red"></i>'
             };
             const toast = document.createElement('div');
-            toast.className = 'toast-in w-full flex items-start gap-3 px-5 py-4 rounded-lg bg-ink/90 text-white shadow-modal text-base sm:text-lg font-medium';
+            toast.className = 'toast-in w-full flex items-start gap-3 px-5 py-4 rounded-xl bg-ink/90 text-white shadow-modal text-base sm:text-lg font-semibold';
             toast.innerHTML = `<span class="shrink-0 mt-0.5">${icons[type] || icons.success}</span><span class="min-w-0"></span>`;
             toast.lastChild.textContent = message;
             document.getElementById('toastContainer').appendChild(toast);
@@ -1361,7 +1326,7 @@
 
             // 명함 무대: 정해진 높이 안에 명함이 쏙 들어가게
             const stage = document.createElement('div');
-            stage.className = 'h-[176px] shrink-0 bg-surface rounded-xl border border-line-light flex items-center justify-center'; // shrink-0: 화면 높이가 좁아도 무대가 찌그러지지 않게
+            stage.className = 'h-[176px] shrink-0 bg-white rounded-2xl border border-line-light shadow-sm flex items-center justify-center'; // shrink-0: 화면 높이가 좁아도 무대가 찌그러지지 않게
             const frame = buildCardFrame(exampleToCard(ex), 'shot_' + ex.id);
             frame.style.width = frameWidthFor(ex.ratio, 196, 152) + 'px';
             stage.appendChild(frame);
@@ -1382,7 +1347,7 @@
                 </div>`;
 
             const btn = document.createElement('button');
-            btn.className = 'shrink-0 h-8 px-2.5 rounded-md bg-brand-pink-50 border border-brand-pink-200 text-brand-pink-600 hover:bg-brand-pink-100 text-xs font-medium whitespace-nowrap transition';
+            btn.className = 'shrink-0 h-8 px-2.5 rounded-lg bg-brand-blue-50 text-brand-blue-600 hover:bg-brand-blue-100 text-xs font-semibold whitespace-nowrap transition';
             btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i>만들어 보기';
             btn.title = '이 예시로 만들어 보기';
             btn.onclick = () => startFromExample(ex.id);
@@ -1430,7 +1395,7 @@
 
                 // 명함 무대: 예시 작품과 똑같은 크기(220 × 176)에 쏙 들어가게
                 const stage = document.createElement('div');
-                stage.className = 'h-[176px] shrink-0 bg-white rounded-xl border border-line-light flex items-center justify-center';
+                stage.className = 'h-[176px] shrink-0 bg-white rounded-2xl border border-line-light shadow-sm flex items-center justify-center';
                 const frame = buildCardFrame(card, card.id);
                 frame.style.width = frameWidthFor(card.ratio, 196, 152) + 'px';
                 stage.appendChild(frame);
@@ -1447,7 +1412,7 @@
                 actions.className = 'mt-2 flex flex-col gap-1.5';
 
                 const qrBtn = document.createElement('button');
-                qrBtn.className = 'w-full h-9 rounded-lg bg-brand-pink hover:bg-brand-pink-400 active:bg-brand-pink-600 text-white text-sm font-medium whitespace-nowrap transition';
+                qrBtn.className = 'w-full h-9 rounded-xl bg-brand-pink hover:bg-brand-blue-600 active:bg-brand-blue-700 text-white text-sm font-semibold whitespace-nowrap transition';
                 qrBtn.textContent = '📱 QR코드로 내 폰에 받기';
                 qrBtn.onclick = () => openQrModal(card.id, card.id, false);
 
@@ -1455,12 +1420,12 @@
                 row.className = 'grid grid-cols-[1fr_auto] gap-1.5';
 
                 const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'h-9 rounded-lg bg-white border border-line-light text-ink-2 hover:bg-line text-sm font-medium whitespace-nowrap transition';
+                downloadBtn.className = 'h-9 rounded-xl bg-white border border-line-light text-ink-2 hover:bg-line text-sm font-semibold whitespace-nowrap transition';
                 downloadBtn.textContent = '💾 PC에 이미지 저장';
                 downloadBtn.onclick = () => downloadCardAsImage(card.id, makeFileName(card));
 
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'w-9 h-9 rounded-lg bg-white border border-line-light text-state-red hover:bg-state-red-bg transition';
+                deleteBtn.className = 'w-9 h-9 rounded-xl bg-white border border-line-light text-state-red hover:bg-state-red-bg transition';
                 deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
                 deleteBtn.title = '명함 삭제';
                 deleteBtn.onclick = () => deleteCard(card.id);
@@ -1638,7 +1603,7 @@
             const ratioShapes = { card: 'w-10 h-[22px]', square: 'w-7 h-7', story: 'w-[18px] h-8' };
             document.getElementById('edRatios').innerHTML = Object.keys(RATIOS).map(key => {
                 const on = editorData.ratio === key;
-                return `<button type="button" onclick="setEditorRatio('${key}')" class="rounded-lg border p-2.5 flex flex-col items-center gap-1.5 transition ${on ? 'border-brand-blue ring-2 ring-brand-blue-100 bg-white' : 'border-line bg-white hover:bg-surface'}">
+                return `<button type="button" onclick="setEditorRatio('${key}')" class="rounded-xl border p-2.5 flex flex-col items-center gap-1.5 transition ${on ? 'border-brand-blue ring-2 ring-brand-blue-100 bg-white' : 'border-line bg-white hover:bg-surface'}">
                     <span class="block ${ratioShapes[key]} rounded-sm border-2 ${on ? 'border-brand-blue bg-brand-blue-100' : 'border-ink-4 bg-surface'}"></span>
                     <span class="text-xs font-medium ${on ? 'text-brand-blue-700' : 'text-ink-2'} whitespace-nowrap">${RATIOS[key].short} ${RATIOS[key].css.replace(/ /g, '')}</span>
                 </button>`;
@@ -1647,7 +1612,7 @@
             // ④ 폰트 8종: 버튼 글자를 실제 그 폰트로 보여줘요
             document.getElementById('edFonts').innerHTML = FONTS.map(f => {
                 const on = editorData.fontClass === f.cls;
-                return `<button type="button" onclick="setEditorFont('${f.cls}')" class="rounded-lg border px-1 py-2 flex flex-col items-center leading-tight transition ${on ? 'border-brand-blue ring-2 ring-brand-blue-100 bg-white' : 'border-line bg-white hover:bg-surface'}">
+                return `<button type="button" onclick="setEditorFont('${f.cls}')" class="rounded-xl border px-1 py-2 flex flex-col items-center leading-tight transition ${on ? 'border-brand-blue ring-2 ring-brand-blue-100 bg-white' : 'border-line bg-white hover:bg-surface'}">
                     <span class="${f.cls} text-ink whitespace-nowrap" style="font-size:${Math.round(18 * f.boost)}px">${f.label}</span>
                     <span class="text-[11px] ${on ? 'text-brand-blue-700' : 'text-ink-3'} whitespace-nowrap mt-0.5">${f.desc}</span>
                 </button>`;
@@ -1659,7 +1624,7 @@
             document.getElementById('edColors').innerHTML = COLORS.map(c => {
                 const on = editorData.colorId === c.id;
                 const recommended = picks.includes(c.id);
-                return `<button type="button" onclick="setEditorColor('${c.id}')" class="relative rounded-lg p-1 transition ${on ? 'ring-2 ring-brand-blue' : 'hover:bg-surface'}">
+                return `<button type="button" onclick="setEditorColor('${c.id}')" class="relative rounded-xl p-1 transition ${on ? 'ring-2 ring-brand-blue' : 'hover:bg-surface'}">
                     <span class="block h-11 rounded-md ${c.bg} border border-black/5 flex items-center justify-center text-sm font-medium" style="color:${c.text === 'light' ? '#fff' : '#18191C'}">가</span>
                     <span class="block text-[11px] mt-1 ${on ? 'text-brand-blue-700 font-medium' : 'text-ink-2'} whitespace-nowrap">${c.name}</span>
                     ${recommended ? '<span class="absolute top-1.5 right-1.5 h-[18px] px-1.5 rounded-full bg-brand-pink text-white text-[10px] leading-[18px] whitespace-nowrap shadow-float">⭐추천</span>' : ''}
@@ -1673,10 +1638,10 @@
 
             // ⑦ 배지 색과 배지 목록
             document.getElementById('edBadgeColors').innerHTML = BADGE_COLORS.map((b, i) => `
-                <button type="button" onclick="setBadgeColor(${i})" class="h-8 px-3 rounded-full text-xs font-medium whitespace-nowrap ${b.cls} ${badgeColorIndex === i ? 'ring-2 ring-brand-blue ring-offset-1' : ''}">${b.name}</button>
+                <button type="button" onclick="setBadgeColor(${i})" class="h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap ${b.cls} ${badgeColorIndex === i ? 'ring-2 ring-brand-blue ring-offset-1' : ''}">${b.name}</button>
             `).join('');
             document.getElementById('edBadgeList').innerHTML = editorData.badges.length
-                ? editorData.badges.map((b, i) => `<button type="button" onclick="removeBadge(${i})" class="h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap ${escapeHtml(b.color)}" title="누르면 지워져요">${escapeHtml(b.text)} <i class="fa-solid fa-xmark ml-0.5 opacity-60"></i></button>`).join('')
+                ? editorData.badges.map((b, i) => `<button type="button" onclick="removeBadge(${i})" class="h-7 px-2.5 rounded-full text-xs font-semibold whitespace-nowrap ${escapeHtml(b.color)}" title="누르면 지워져요">${escapeHtml(b.text)} <i class="fa-solid fa-xmark ml-0.5 opacity-60"></i></button>`).join('')
                 : '<span class="text-xs text-ink-3">아직 추가한 배지가 없어요</span>';
         }
 
@@ -1899,7 +1864,7 @@
         // ------------------------------------------------------------
         // 선택된 칩은 하늘색, 아닌 칩은 회색 (디자인 문서의 '채널 칩' 모양)
         function chipClass(selected) {
-            const base = 'h-9 px-3.5 rounded-md text-sm border whitespace-nowrap transition';
+            const base = 'h-9 px-3.5 rounded-full text-sm border whitespace-nowrap transition';
             return selected
                 ? `${base} bg-brand-blue-100 text-brand-blue-700 border-brand-blue font-medium`
                 : `${base} bg-surface text-ink-2 border-line-light hover:bg-line hover:text-ink`;
@@ -1908,7 +1873,7 @@
         function renderVibeChips() {
             // 테마 카드 5개
             document.getElementById('vibeThemeList').innerHTML = PROMPT_THEMES.map((t, i) => `
-                <button type="button" onclick="selectVibeTheme(${i})" class="p-2 rounded-lg bg-white text-left transition border ${vibeState.theme === i ? 'border-brand-blue ring-2 ring-brand-blue-100' : 'border-line hover:border-line-bold'}">
+                <button type="button" onclick="selectVibeTheme(${i})" class="p-2 rounded-xl bg-white text-left transition border ${vibeState.theme === i ? 'border-brand-blue ring-2 ring-brand-blue-100' : 'border-line hover:border-line-bold'}">
                     <div class="h-12 rounded-md bg-gradient-to-r ${t.gradient} flex items-center justify-center text-2xl">${t.emoji}</div>
                     <div class="text-[13px] mt-1.5 leading-snug ${vibeState.theme === i ? 'text-brand-blue-700 font-medium' : 'text-ink-2'}">${t.name}</div>
                 </button>
